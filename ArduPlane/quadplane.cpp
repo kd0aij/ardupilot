@@ -513,6 +513,7 @@ bool QuadPlane::setup(void)
       also saves memory when not in use
      */
     motor_class = (enum AP_Motors::motor_frame_class)frame_class.get();
+    // for a tailsitter, frame_class is >= MOTOR_FRAME_TAILSITTER
     switch (motor_class) {
     case AP_Motors::MOTOR_FRAME_QUAD:
         setup_default_channels(4);
@@ -536,6 +537,8 @@ bool QuadPlane::setup(void)
         break;
     case AP_Motors::MOTOR_FRAME_TAILSITTER:
         break;
+    case AP_Motors::MOTOR_FRAME_TS_QUAD:
+        break;
     default:
         hal.console->printf("Unknown frame class %u - using QUAD\n", (unsigned)frame_class.get());
         frame_class.set(AP_Motors::MOTOR_FRAME_QUAD);
@@ -551,6 +554,11 @@ bool QuadPlane::setup(void)
     case AP_Motors::MOTOR_FRAME_TAILSITTER:
         motors = new AP_MotorsTailsitter(plane.scheduler.get_loop_rate_hz(), rc_speed);
         motors_var_info = AP_MotorsTailsitter::var_info;
+        rotation = ROTATION_PITCH_90;
+        break;
+    case AP_Motors::MOTOR_FRAME_TS_QUAD:
+        motors = new AP_MotorsMatrixTS(plane.scheduler.get_loop_rate_hz(), rc_speed);
+        motors_var_info = AP_MotorsMatrixTS::var_info;
         rotation = ROTATION_PITCH_90;
         break;
     default:
@@ -571,7 +579,7 @@ bool QuadPlane::setup(void)
     if (ahrs_view == nullptr) {
         goto failed;
     }
-
+    
     attitude_control = new AC_AttitudeControl_Multi(*ahrs_view, aparm, *motors, loop_delta_t);
     if (!attitude_control) {
         hal.console->printf("%s attitude_control\n", strUnableToAllocate);
@@ -767,6 +775,7 @@ void QuadPlane::run_z_controller(void)
         // controller. We need to assume the integrator may be way off
 
         // the base throttle we start at is the current throttle we are using
+        // note that AC_PosControl::run_z_controller() adds the Z pid (_pid_accel_z) output to _motors.get_throttle_hover()
         float base_throttle = constrain_float(motors->get_throttle() - motors->get_throttle_hover(), -1, 1) * 1000;
         pos_control->get_accel_z_pid().set_integrator(base_throttle);
 
@@ -1267,6 +1276,9 @@ void QuadPlane::update_transition(void)
     if (is_tailsitter()) {
         if (transition_state == TRANSITION_ANGLE_WAIT_FW &&
             tailsitter_transition_fw_complete()) {
+            // stop the top and bottom motors when in fixed-wing mode
+            SRV_Channels::set_output_scaled(SRV_Channel::k_motor3, 0);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_motor4, 0);
             gcs().send_text(MAV_SEVERITY_INFO, "Transition FW done");
             transition_state = TRANSITION_DONE;
         }
@@ -1386,10 +1398,12 @@ void QuadPlane::update_transition(void)
         plane.nav_pitch_cd = constrain_float((-transition_rate * dt)*100, -8500, 0);
         plane.nav_roll_cd = 0;
         check_attitude_relax();
-        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd, 
                                                                       plane.nav_pitch_cd,
                                                                       0);
         attitude_control->set_throttle_out(motors->get_throttle_hover(), true, 0);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_motor3, motors->get_throttle_hover());
+        SRV_Channels::set_output_scaled(SRV_Channel::k_motor4, motors->get_throttle_hover());
         break;
     }
 
@@ -1596,6 +1610,7 @@ void QuadPlane::motors_output(bool run_rate_controller)
     // see if motors should be shut down
     check_throttle_suppression();
     
+    // this calls the AP_MotorsMulticopter virtual methods output_armed_stabilizing() then output_to_motors()
     motors->output();
     if (motors->armed()) {
         plane.DataFlash.Log_Write_Rate(plane.ahrs, *motors, *attitude_control, *pos_control);
