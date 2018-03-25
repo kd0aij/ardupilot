@@ -92,9 +92,18 @@ void Plane::stabilize_roll(float speed_scaler)
     if (control_mode == STABILIZE && channel_roll->get_control_in() != 0) {
         disable_integrator = true;
     }
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, 
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(-1500 + nav_roll_cd - ahrs.roll_sensor, 
                                                                                          speed_scaler, 
                                                                                          disable_integrator));
+    
+    static int cnt=0;
+    if (cnt++ > 100) {
+        cnt = 0;
+        int32_t sv = rollController.get_servo_out(-1500 + nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator);
+        int32_t usv = rollController.get_servo_out( nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator);
+        hal.console->printf("stabilize roll: roll_cd: %5i, roll_sensor: %5i, sv: %5i, unbiased sv: %5i\n", nav_roll_cd, ahrs.roll_sensor, sv, usv);
+    }
+            
 }
 
 /*

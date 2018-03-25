@@ -40,10 +40,13 @@ public:
         MOTOR_FRAME_TRI = 7,
         MOTOR_FRAME_SINGLE = 8,
         MOTOR_FRAME_COAX = 9,
-        MOTOR_FRAME_TAILSITTER = 10,
         MOTOR_FRAME_HELI_DUAL = 11,
         MOTOR_FRAME_DODECAHEXA = 12,
         MOTOR_FRAME_HELI_QUAD = 13,
+        // all of the following are tailsitters
+        MOTOR_FRAME_TAILSITTER = 100, // dual motor tailsitter
+        MOTOR_FRAME_TS_QUAD = MOTOR_FRAME_TAILSITTER + MOTOR_FRAME_QUAD,
+        MOTOR_FRAME_TS_HEXA = MOTOR_FRAME_TAILSITTER + MOTOR_FRAME_HEXA
     };
     enum motor_frame_type {
         MOTOR_FRAME_TYPE_PLUS = 0,
