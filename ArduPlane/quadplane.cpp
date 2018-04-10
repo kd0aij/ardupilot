@@ -571,7 +571,7 @@ bool QuadPlane::setup(void)
     if (ahrs_view == nullptr) {
         goto failed;
     }
-
+    
     attitude_control = new AC_AttitudeControl_Multi(*ahrs_view, aparm, *motors, loop_delta_t);
     if (!attitude_control) {
         hal.console->printf("%s attitude_control\n", strUnableToAllocate);
@@ -699,7 +699,6 @@ void QuadPlane::init_stabilize(void)
 void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
 {
     check_attitude_relax();
-
     if (in_vtol_mode() || is_tailsitter()) {
         // use euler angle attitude control
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
@@ -767,6 +766,7 @@ void QuadPlane::run_z_controller(void)
         // controller. We need to assume the integrator may be way off
 
         // the base throttle we start at is the current throttle we are using
+        // note that AC_PosControl::run_z_controller() adds the Z pid (_pid_accel_z) output to _motors.get_throttle_hover()
         float base_throttle = constrain_float(motors->get_throttle() - motors->get_throttle_hover(), -1, 1) * 1000;
         pos_control->get_accel_z_pid().set_integrator(base_throttle);
 
@@ -907,19 +907,16 @@ bool QuadPlane::is_flying(void)
 bool QuadPlane::should_relax(void)
 {
     const uint32_t tnow = millis();
-
     bool motor_at_lower_limit = motors->limit.throttle_lower && attitude_control->is_throttle_mix_min();
     if (motors->get_throttle() < 0.01f) {
         motor_at_lower_limit = true;
     }
-
     if (!motor_at_lower_limit) {
         landing_detect.lower_limit_start_ms = 0;
         return false;
     } else if (landing_detect.lower_limit_start_ms == 0) {
         landing_detect.lower_limit_start_ms = tnow;
     }
-
     return (tnow - landing_detect.lower_limit_start_ms) > 1000;
 }
 
@@ -997,6 +994,7 @@ void QuadPlane::control_loiter()
                                                plane.channel_pitch->get_control_in(),
                                                plane.G_Dt);
 
+    
     // run loiter controller
     loiter_nav->update();
 
@@ -1267,6 +1265,9 @@ void QuadPlane::update_transition(void)
     if (is_tailsitter()) {
         if (transition_state == TRANSITION_ANGLE_WAIT_FW &&
             tailsitter_transition_fw_complete()) {
+            // stop the top and bottom motors when in fixed-wing mode
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttleTop, 0);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttleBot, 0);
             gcs().send_text(MAV_SEVERITY_INFO, "Transition FW done");
             transition_state = TRANSITION_DONE;
         }
@@ -1312,7 +1313,6 @@ void QuadPlane::update_transition(void)
             gcs().send_text(MAV_SEVERITY_INFO, "Transition airspeed reached %.1f", (double)aspeed);
         }
         assisted_flight = true;
-
         // do not allow a climb on the quad motors during transition
         // a climb would add load to the airframe, and prolongs the
         // transition
@@ -1386,10 +1386,12 @@ void QuadPlane::update_transition(void)
         plane.nav_pitch_cd = constrain_float((-transition_rate * dt)*100, -8500, 0);
         plane.nav_roll_cd = 0;
         check_attitude_relax();
-        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd, 
                                                                       plane.nav_pitch_cd,
                                                                       0);
         attitude_control->set_throttle_out(motors->get_throttle_hover(), true, 0);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttleTop, motors->get_throttle_hover());
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttleBot, motors->get_throttle_hover());
         break;
     }
 
@@ -1403,7 +1405,7 @@ void QuadPlane::update_transition(void)
             motors->output();
         }
         return;
-    }
+}
 
     motors_output();
 }
@@ -1453,6 +1455,7 @@ void QuadPlane::update(void)
         
         // give full authority to attitude control
         attitude_control->set_throttle_mix_max();
+
 
         // output to motors
         motors_output();
@@ -1565,6 +1568,35 @@ void QuadPlane::check_throttle_suppression(void)
     last_motors_active_ms = 0;
 }
 
+// update estimated throttle required to hover (if necessary)
+//  called at 100hz
+void QuadPlane::update_throttle_hover()
+{
+    // only learn hover throttle for tailsitters
+    if (!is_tailsitter()) {
+        return;
+    }
+
+    // if not armed or landed exit
+    if (!motors->armed() || !is_flying_vtol()) {
+        return;
+    }
+
+    // do not update while climbing or descending
+    if (!is_zero(pos_control->get_desired_velocity().z)) {
+        return;
+    }
+
+    // get throttle output
+    float throttle = motors->get_throttle();
+
+    // calc average throttle if we are in a level hover
+    if (throttle > 0.0f && fabsf(inertial_nav.get_velocity_z()) < 60 &&
+            labs(ahrs_view->roll_sensor) < 500 && labs(ahrs_view->pitch_sensor) < 500) {
+        // Can we set the time constant automatically
+        motors->update_throttle_hover(0.01f);
+    }
+}
 /*
   output motors and do any copter needed
  */
@@ -1573,7 +1605,6 @@ void QuadPlane::motors_output(bool run_rate_controller)
     if (run_rate_controller) {
         attitude_control->rate_controller_run();
     }
-
     if (!hal.util->get_soft_armed() || plane.afs.should_crash_vehicle()) {
         motors->set_desired_spool_state(AP_Motors::DESIRED_SHUT_DOWN);
         motors->output();
@@ -1796,7 +1827,6 @@ void QuadPlane::vtol_position_controller(void)
     setup_target_position();
 
     const Location &loc = plane.next_WP_loc;
-
     check_attitude_relax();
 
     // horizontal position control
@@ -2052,7 +2082,6 @@ void QuadPlane::takeoff_controller(void)
 void QuadPlane::waypoint_controller(void)
 {
     setup_target_position();
-
     check_attitude_relax();
 
     /*
@@ -2157,7 +2186,7 @@ bool QuadPlane::do_vtol_takeoff(const AP_Mission::Mission_Command& cmd)
             return false;
         }
     } else {
-        plane.next_WP_loc.alt = plane.current_loc.alt + cmd.content.location.alt;
+    plane.next_WP_loc.alt = plane.current_loc.alt + cmd.content.location.alt;
     }
     throttle_wait = false;
 
@@ -2607,7 +2636,7 @@ bool QuadPlane::is_vtol_land(uint16_t id) const
         if (options & QuadPlane::OPTION_MISSION_LAND_FW_APPROACH) {
             return plane.vtol_approach_s.approach_stage == Plane::Landing_ApproachStage::VTOL_LANDING;
         } else {
-            return true;
+        return true;
         }
     }
     if (id == MAV_CMD_NAV_LAND && available() && (options & OPTION_ALLOW_FW_LAND) == 0) {
