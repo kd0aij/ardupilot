@@ -408,6 +408,21 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @User: Standard
     // @Bitmask: 0:Motor 1,1:Motor 2,2:Motor 3,3:Motor 4, 4:Motor 5,5:Motor 6,6:Motor 7,7:Motor 8
     AP_GROUPINFO("TAILSIT_MOTMX", 9, QuadPlane, tailsitter.motor_mask, 0),
+    // @Param: TAILSIT_SPDMIN
+    // @DisplayName: Tailsitter minimum airspeed scaling
+    // @Description: bellow this airspeed tailsiter is controlled by copter gains, gains scaled linearly between TAILSIT_SPDMIN and TAILSIT_SPDMAX, this apply s in Q modes and during Q assist if enabled
+    // @Units: m/s
+    // @Range: 0 50
+    // @User: Standard
+    AP_GROUPINFO("TAILSIT_SPDMIN", 10, QuadPlane, tailsitter.scaling_speed_min, 10),
+
+    // @Param: TAILSIT_SPDMAX
+    // @DisplayName: Tailsitter maximum airspeed scaling
+    // @Description: above this airspeed tailsiter is controlled by plane gains, gains scaled linearly between TAILSIT_SPDMIN and TAILSIT_SPDMAX, this apply s in Q modes and during Q assist if enabled
+    // @Units: m/s
+    // @Range: 0 50
+    // @User: Standard
+    AP_GROUPINFO("TAILSIT_SPDMAX", 11, QuadPlane, tailsitter.scaling_speed_max, 20),
 
     AP_GROUPEND
 };
@@ -749,8 +764,8 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
                                                                                yaw_rate_cds);
         } else if (tailsitter.input_type == TAILSITTER_INPUT_BF_ROLL_P) {
             attitude_control->input_euler_rate_yaw_euler_angle_pitch_bf_roll_p(plane.nav_roll_cd,
-                                                                               plane.nav_pitch_cd,
-                                                                               yaw_rate_cds);
+                                                                             plane.nav_pitch_cd,
+                                                                             yaw_rate_cds);
         } else {
             // use euler angle attitude control
             attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
@@ -1403,18 +1418,19 @@ void QuadPlane::update_transition(void)
      */
     if (have_airspeed &&
         assistance_needed(aspeed) &&
-        !is_tailsitter() &&
         hal.util->get_soft_armed() &&
         ((plane.auto_throttle_mode && !plane.throttle_suppressed) ||
          plane.get_throttle_input()>0 ||
          plane.is_flying())) {
         // the quad should provide some assistance to the plane
+        if (!is_tailsitter()) {
         if (transition_state != TRANSITION_AIRSPEED_WAIT) {
             gcs().send_text(MAV_SEVERITY_INFO, "Transition started airspeed %.1f", (double)aspeed);
         }
         transition_state = TRANSITION_AIRSPEED_WAIT;
         if (transition_start_ms == 0) {
             transition_start_ms = now;
+            }
         }
         assisted_flight = true;
     } else {
@@ -2537,7 +2553,7 @@ bool QuadPlane::verify_vtol_land(void)
             // available
             plane.set_next_WP(plane.mission.get_current_nav_cmd().content.location);
         } else {
-            plane.set_next_WP(plane.next_WP_loc);
+        plane.set_next_WP(plane.next_WP_loc);
             plane.next_WP_loc.alt = ahrs.get_home().alt;
         }
     }
@@ -2657,7 +2673,7 @@ int8_t QuadPlane::forward_throttle_pct(void)
     // inhibit reverse throttle and allow petrol engines with min > 0
     int8_t fwd_throttle_min = plane.have_reverse_thrust() ? 0 : plane.aparm.throttle_min;
     vel_forward.integrator = constrain_float(vel_forward.integrator, fwd_throttle_min, plane.aparm.throttle_max);
-
+    
     if (in_vtol_land_approach()) {
         // when we are doing horizontal positioning in a VTOL land
         // we always allow the fwd motor to run. Otherwise a bad
@@ -2667,11 +2683,10 @@ int8_t QuadPlane::forward_throttle_pct(void)
     } else {
         // If we are below alt_cutoff then scale down the effect until
         // it turns off at alt_cutoff and decay the integrator
-        float alt_cutoff = MAX(0,vel_forward_alt_cutoff);
-        float height_above_ground = plane.relative_ground_altitude(plane.g.rangefinder_landing);
-
-        vel_forward.last_pct = linear_interpolate(0, vel_forward.integrator,
-                                                  height_above_ground, alt_cutoff, alt_cutoff+2);
+    float alt_cutoff = MAX(0,vel_forward_alt_cutoff);
+    float height_above_ground = plane.relative_ground_altitude(plane.g.rangefinder_landing);
+    vel_forward.last_pct = linear_interpolate(0, vel_forward.integrator,
+                                   height_above_ground, alt_cutoff, alt_cutoff+2);
     }
     if (vel_forward.last_pct == 0) {
         // if the percent is 0 then decay the integrator
