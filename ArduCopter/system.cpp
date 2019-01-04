@@ -509,8 +509,8 @@ void Copter::allocate_motors(void)
             motors_var_info = AP_MotorsMatrix::var_info;
             break;
         case AP_Motors::MOTOR_FRAME_TRI:
-            motors = new AP_MotorsTri(copter.scheduler.get_loop_rate_hz());
-            motors_var_info = AP_MotorsTri::var_info;
+            motors = new AP_MotorsMatrixTri(copter.scheduler.get_loop_rate_hz());
+            motors_var_info = AP_MotorsMatrixTri::var_info;
             AP_Param::set_frame_type_flags(AP_PARAM_FRAME_TRICOPTER);
             break;
         case AP_Motors::MOTOR_FRAME_SINGLE:
