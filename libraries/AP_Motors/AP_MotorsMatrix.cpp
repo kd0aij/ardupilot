@@ -731,17 +731,18 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
             break;
 
             case MOTOR_FRAME_TRI:
-                add_motor_num(AP_MOTORS_MOT_1);
-                add_motor_num(AP_MOTORS_MOT_2);
-                add_motor_num(AP_MOTORS_MOT_4);
+                add_motor_raw(AP_MOTORS_MOT_1, -1.0f,   0.500f, 0,  1); // right
+                add_motor_raw(AP_MOTORS_MOT_2,  1.0f,   0.500f, 0,  1); // left
+                add_motor_raw(AP_MOTORS_MOT_4,  0.0f,  -1.000f, 0,  1); // rear
 
                 // set update rate for the 3 motors (but not the servo on channel 7)
                 set_update_rate(_speed_hz);
 
-                // set the motor_enabled flag so that the ESCs can be calibrated like other frame types
-                motor_enabled[AP_MOTORS_MOT_1] = true;
-                motor_enabled[AP_MOTORS_MOT_2] = true;
-                motor_enabled[AP_MOTORS_MOT_4] = true;
+//                // set the motor_enabled flag so that the ESCs can be calibrated like other frame types
+//                motor_enabled[AP_MOTORS_MOT_1] = true;
+//                motor_enabled[AP_MOTORS_MOT_2] = true;
+//                motor_enabled[AP_MOTORS_MOT_4] = true;
+                success = true;
                 break;
 
         case MOTOR_FRAME_Y6:
