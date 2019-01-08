@@ -35,7 +35,7 @@ float QuadPlane::tilt_max_change(bool up)
 }
 
 /*
-  output a slew limited tiltrotor angle. tilt is from 0 to 1
+  output a slew limited tiltrotor angle. tilt is from 0 (vertical) to 1 (max forward)
  */
 void QuadPlane::tiltrotor_slew(float newtilt)
 {

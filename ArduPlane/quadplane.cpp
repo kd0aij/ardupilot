@@ -555,8 +555,8 @@ bool QuadPlane::setup(void)
 
     switch (motor_class) {
     case AP_Motors::MOTOR_FRAME_TRI:
-        motors = new AP_MotorsTri(plane.scheduler.get_loop_rate_hz(), rc_speed);
-        motors_var_info = AP_MotorsTri::var_info;
+        motors = new AP_MotorsMatrixTri(plane.scheduler.get_loop_rate_hz(), rc_speed);
+        motors_var_info = AP_MotorsMatrixTri::var_info;
         break;
     case AP_Motors::MOTOR_FRAME_TAILSITTER:
         motors = new AP_MotorsTailsitter(plane.scheduler.get_loop_rate_hz(), rc_speed);
