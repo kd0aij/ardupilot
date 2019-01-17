@@ -535,8 +535,6 @@ bool QuadPlane::setup(void)
         SRV_Channels::set_default_function(CH_11, SRV_Channel::k_motor7);
         AP_Param::set_frame_type_flags(AP_PARAM_FRAME_TRICOPTER);
         break;
-    case AP_Motors::MOTOR_FRAME_TAILSITTER:
-        break;
     case AP_Motors::MOTOR_FRAME_TS_QUAD:
         SRV_Channels::set_default_function(CH_5, SRV_Channel::k_motor1);
         SRV_Channels::set_default_function(CH_6, SRV_Channel::k_motor2);
@@ -554,11 +552,6 @@ bool QuadPlane::setup(void)
     case AP_Motors::MOTOR_FRAME_TRI:
         motors = new AP_MotorsTri(plane.scheduler.get_loop_rate_hz(), rc_speed);
         motors_var_info = AP_MotorsTri::var_info;
-        break;
-    case AP_Motors::MOTOR_FRAME_TAILSITTER:
-        motors = new AP_MotorsTailsitter(plane.scheduler.get_loop_rate_hz(), rc_speed);
-        motors_var_info = AP_MotorsTailsitter::var_info;
-        rotation = ROTATION_PITCH_90;
         break;
     case AP_Motors::MOTOR_FRAME_TS_QUAD:
         motors = new AP_MotorsMatrixTS(plane.scheduler.get_loop_rate_hz(), rc_speed);
