@@ -9,6 +9,5 @@
 #include "AP_MotorsHeli_Quad.h"
 #include "AP_MotorsSingle.h"
 #include "AP_MotorsCoax.h"
-#include "AP_MotorsTailsitter.h"
 #include "AP_Motors6DOF.h"
 #include "AP_MotorsMatrixTS.h"
