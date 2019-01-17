@@ -52,7 +52,6 @@ void AP_MotorsTailsitter::init(motor_frame_class frame_class, motor_frame_type f
     // left servo defaults to servo output 4
     SRV_Channels::set_aux_channel_default(SRV_Channel::k_tiltMotorLeft, CH_4);
     SRV_Channels::set_angle(SRV_Channel::k_tiltMotorLeft, SERVO_OUTPUT_RANGE);
-
     // record successful initialisation if what we setup was the desired frame_class
     _flags.initialised_ok = (frame_class == MOTOR_FRAME_TAILSITTER);
 }
@@ -71,7 +70,6 @@ void AP_MotorsTailsitter::set_update_rate(uint16_t speed_hz)
 {
     // record requested speed
     _speed_hz = speed_hz;
-
     SRV_Channels::set_rc_frequency(SRV_Channel::k_throttleLeft, speed_hz);
     SRV_Channels::set_rc_frequency(SRV_Channel::k_throttleRight, speed_hz);
 }
@@ -82,7 +80,7 @@ void AP_MotorsTailsitter::output_to_motors()
         return;
     }
     float throttle_pwm = 0.0f;
-
+    
     switch (_spool_mode) {
         case SHUT_DOWN:
             throttle_pwm = get_pwm_output_min();
@@ -101,8 +99,7 @@ void AP_MotorsTailsitter::output_to_motors()
             SRV_Channels::set_output_pwm(SRV_Channel::k_throttleLeft, calc_thrust_to_pwm(_thrust_left));
             SRV_Channels::set_output_pwm(SRV_Channel::k_throttleRight, calc_thrust_to_pwm(_thrust_right));
             break;
-    }
-
+        }
     // Always output to tilt servos
     SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft, _tilt_left*SERVO_OUTPUT_RANGE);
     SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, _tilt_right*SERVO_OUTPUT_RANGE);
@@ -170,7 +167,7 @@ void AP_MotorsTailsitter::output_armed_stabilizing()
         thr_adj = 1.0f - thrust_max;
         limit.throttle_upper = true;
         limit.roll_pitch = true;
-    }
+}
 
     // Add adjustment to reduce average throttle
     _thrust_left  = constrain_float(_thrust_left  + thr_adj, 0.0f, 1.0f);

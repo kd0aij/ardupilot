@@ -44,6 +44,9 @@ public:
         MOTOR_FRAME_HELI_DUAL = 11,
         MOTOR_FRAME_DODECAHEXA = 12,
         MOTOR_FRAME_HELI_QUAD = 13,
+        // MotorsMatrix based non-vectored tailsitters
+        MOTOR_FRAME_TS_QUAD = 14,
+        MOTOR_FRAME_TS_HEXA = 15
     };
     enum motor_frame_type {
         MOTOR_FRAME_TYPE_PLUS = 0,

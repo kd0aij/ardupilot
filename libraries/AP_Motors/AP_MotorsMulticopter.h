@@ -88,6 +88,8 @@ public:
         _thrust_compensation_callback = callback;
     }
     
+    virtual void output_fixed_wing(bool vtrans, float vectored_forward_gain, uint16_t mask) {};
+
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo        var_info[];
 
