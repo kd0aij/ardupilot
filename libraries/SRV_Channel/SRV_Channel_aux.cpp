@@ -119,8 +119,6 @@ void SRV_Channel::aux_servo_function_setup(void)
     case k_throttle:
     case k_throttleLeft:
     case k_throttleRight:
-    case k_throttleTop:
-    case k_throttleBot:
     case k_motor1:
     case k_motor2:
     case k_motor3:
