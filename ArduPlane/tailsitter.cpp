@@ -213,6 +213,19 @@ void QuadPlane::tailsitter_speed_scaling(void)
         scaling = constrain_float(hover_throttle / throttle, 0, tailsitter.throttle_scale_max);
     }
     
+    // reduce throws if in VTOL mode at large pitch angles (implies high airspeed)
+    const float magic_attenuation = 0.5f;
+    const float magic_roll_thresh = 30.0f;
+    if (in_vtol_mode()) {
+        float roll = labs(ahrs_view->roll_sensor) / 100.0f;
+        float pitch = labs(ahrs_view->pitch_sensor) / 100.0f;
+        if (pitch > tailsitter.transition_angle) {
+            scaling = constrain_float(magic_attenuation * (float)(tailsitter.transition_angle) / pitch, 0.25f, 1.0f);
+        }
+        else if (roll > 30) {
+            scaling = constrain_float(magic_attenuation * magic_roll_thresh / roll, 0.25f, 1.0f);
+        }
+    }
     const SRV_Channel::Aux_servo_function_t functions[4] = {
         SRV_Channel::Aux_servo_function_t::k_aileron,
         SRV_Channel::Aux_servo_function_t::k_elevator,
