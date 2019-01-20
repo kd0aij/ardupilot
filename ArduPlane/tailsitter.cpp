@@ -67,7 +67,7 @@ void QuadPlane::tailsitter_output(void)
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft, tilt_left);
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, tilt_right);
         
-        float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)*0.01f;
+        float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
         if (in_tailsitter_vtol_transition() && !throttle_wait && is_flying() && hal.util->get_soft_armed()) {
             /*
               during transitions to vtol mode set the throttle to the
@@ -81,7 +81,7 @@ void QuadPlane::tailsitter_output(void)
             SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, 0);
             pos_control->get_accel_z_pid().set_integrator(throttle*10);
         }
-        motors->output_motor_mask(throttle, tailsitter.motor_mask, plane.rudder_dt);
+        motors->output_motor_mask(throttle*0.01f, tailsitter.motor_mask, plane.rudder_dt);
         return;
     }
     
