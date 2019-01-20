@@ -73,6 +73,7 @@ void AP_MotorsMatrix::output_to_motors()
 {
     int8_t i;
     int16_t motor_out[AP_MOTORS_MAX_NUM_MOTORS];    // final pwm values sent to the motor
+    float throttle_pwm = 0.0f;
 
     switch (_spool_mode) {
         case SHUT_DOWN: {
@@ -87,6 +88,7 @@ void AP_MotorsMatrix::output_to_motors()
                     }
                 }
             }
+            throttle_pwm = get_pwm_output_min();
             break;
         }
         case GROUND_IDLE:
@@ -96,6 +98,7 @@ void AP_MotorsMatrix::output_to_motors()
                     motor_out[i] = calc_spin_up_to_pwm();
                 }
             }
+            throttle_pwm = calc_spin_up_to_pwm();
             break;
         case SPOOL_UP:
         case THROTTLE_UNLIMITED:
@@ -106,6 +109,7 @@ void AP_MotorsMatrix::output_to_motors()
                     motor_out[i] = calc_thrust_to_pwm(_thrust_rpyt_out[i]);
                 }
             }
+            throttle_pwm = calc_thrust_to_pwm(_throttle_thrust);
             break;
     }
 
@@ -115,6 +119,12 @@ void AP_MotorsMatrix::output_to_motors()
             rc_write(i, motor_out[i]);
         }
     }
+
+    // plane outputs for Qmodes are setup here, and written to the HAL by the plane servos loop
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, -_yaw_in*4500.0f);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, _pitch_in*4500.0f);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, _roll_in*4500.0f);
+    SRV_Channels::set_output_pwm(SRV_Channel::k_throttle, throttle_pwm);
 }
 
 
@@ -144,7 +154,6 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     float   roll_thrust;                // roll thrust input value, +/- 1.0
     float   pitch_thrust;               // pitch thrust input value, +/- 1.0
     float   yaw_thrust;                 // yaw thrust input value, +/- 1.0
-    float   throttle_thrust;            // throttle thrust input value, 0.0 - 1.0
     float   throttle_avg_max;           // throttle thrust average maximum value, 0.0 - 1.0
     float   throttle_thrust_max;        // throttle thrust maximum value, 0.0 - 1.0
     float   throttle_thrust_best_rpy;   // throttle providing maximum roll, pitch and yaw range without climbing
@@ -157,22 +166,22 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     roll_thrust = _roll_in * compensation_gain;
     pitch_thrust = _pitch_in * compensation_gain;
     yaw_thrust = _yaw_in * compensation_gain;
-    throttle_thrust = get_throttle() * compensation_gain;
+    _throttle_thrust = get_throttle() * compensation_gain;
     throttle_avg_max = _throttle_avg_max * compensation_gain;
     throttle_thrust_max = _thrust_boost_ratio + (1.0f - _thrust_boost_ratio) * _throttle_thrust_max;
 
     // sanity check throttle is above zero and below current limited throttle
-    if (throttle_thrust <= 0.0f) {
-        throttle_thrust = 0.0f;
+    if (_throttle_thrust <= 0.0f) {
+        _throttle_thrust = 0.0f;
         limit.throttle_lower = true;
     }
-    if (throttle_thrust >= throttle_thrust_max) {
-        throttle_thrust = throttle_thrust_max;
+    if (_throttle_thrust >= throttle_thrust_max) {
+        _throttle_thrust = throttle_thrust_max;
         limit.throttle_upper = true;
     }
 
     // ensure that throttle_avg_max is between the input throttle and the maximum throttle
-    throttle_avg_max = constrain_float(throttle_avg_max, throttle_thrust, throttle_thrust_max);
+    throttle_avg_max = constrain_float(throttle_avg_max, _throttle_thrust, throttle_thrust_max);
 
     // calculate throttle that gives most possible room for yaw which is the lower of:
     //      1. 0.5f - (rpy_low+rpy_high)/2.0 - this would give the maximum possible margin above the highest motor and below the lowest
@@ -279,7 +288,7 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     rpy_high *= rpy_scale;
     rpy_low *= rpy_scale;
     throttle_thrust_best_rpy = -rpy_low;
-    thr_adj = throttle_thrust - throttle_thrust_best_rpy;
+    thr_adj = _throttle_thrust - throttle_thrust_best_rpy;
     if (rpy_scale < 1.0f) {
         // Full range is being used by roll, pitch, and yaw.
         limit.roll_pitch = true;
