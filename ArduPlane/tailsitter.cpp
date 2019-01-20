@@ -23,7 +23,7 @@
  */
 bool QuadPlane::is_tailsitter(void) const
 {
-    return available() && frame_class == AP_Motors::MOTOR_FRAME_TAILSITTER;
+    return available() && (frame_class == AP_Motors::MOTOR_FRAME_TAILSITTER || tailsitter.motor_mask != 0);
 }
 
 /*
@@ -67,19 +67,21 @@ void QuadPlane::tailsitter_output(void)
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft, tilt_left);
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, tilt_right);
         
+        float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)*0.01f;
         if (in_tailsitter_vtol_transition() && !throttle_wait && is_flying() && hal.util->get_soft_armed()) {
             /*
               during transitions to vtol mode set the throttle to the
               hover throttle, and set the altitude controller
               integrator to the same throttle level
              */
-            uint8_t throttle = motors->get_throttle_hover() * 100;
+            throttle = motors->get_throttle_hover() * 100;
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle);
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttleLeft, throttle);
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttleRight, throttle);
             SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, 0);
             pos_control->get_accel_z_pid().set_integrator(throttle*10);
         }
+        motors->output_motor_mask(throttle, tailsitter.motor_mask, plane.rudder_dt);
         return;
     }
     

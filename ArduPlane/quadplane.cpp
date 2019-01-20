@@ -402,6 +402,13 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @User: Advanced
     AP_GROUPINFO("TRANS_FAIL", 8, QuadPlane, transition_failure, 0),
 
+    // @Param: TAILSIT_MASK
+    // @DisplayName: Tailsiter mask
+    // @Description: This is a bitmask of motors that are to remain active in forward flight for a 'copter' tailsitter
+    // @User: Standard
+    // @Bitmask: 0:Motor 1,1:Motor 2,2:Motor 3,3:Motor 4, 4:Motor 5,5:Motor 6,6:Motor 7,7:Motor 8
+    AP_GROUPINFO("TAILSIT_MASK", 9, QuadPlane, tailsitter.motor_mask, 0),
+
     AP_GROUPEND
 };
 
@@ -575,6 +582,9 @@ bool QuadPlane::setup(void)
     default:
         motors = new AP_MotorsMatrix(plane.scheduler.get_loop_rate_hz(), rc_speed);
         motors_var_info = AP_MotorsMatrix::var_info;
+        if (tailsitter.motor_mask != 0) {
+            rotation = ROTATION_PITCH_90;
+        }
         break;
     }
     const static char *strUnableToAllocate = "Unable to allocate";
