@@ -212,6 +212,10 @@ void QuadPlane::tailsitter_check_input(void)
         int16_t roll_in = plane.channel_roll->get_control_in();
         int16_t yaw_in = plane.channel_rudder->get_control_in();
         plane.channel_roll->set_control_in(yaw_in);
+        // TODO: with earth-frame yaw, right aileron results in left yaw
+        // when the nose is not vertical. Hence it is preferable to use
+        // TAILSITTER_INPUT_MULTICOPTER when off vertical. This problem
+        // should go away with body-frame yaw, as in QACRO mode.
         plane.channel_rudder->set_control_in(-roll_in);
     }
 }
@@ -249,6 +253,13 @@ void QuadPlane::tailsitter_speed_scaling(void)
         const float c_tilt = ahrs_view->get_rotation_body_to_ned().c.z;
         if (c_tilt < c_trans_angle) {
             scaling = constrain_float(beta + alpha * c_tilt, max_atten, 1.0f);
+        }
+        // if throttle is above hover thrust, apply additional attenuation
+        const float tthr = 0.5f * hover_throttle;
+        if (throttle > tthr) {
+            const float throttle_atten = 1 - (throttle - tthr) / (1 - tthr);
+            scaling *= throttle_atten;
+            scaling = constrain_float(scaling, .2f, 1.0f);
         }
     }
     const SRV_Channel::Aux_servo_function_t functions[4] = {
