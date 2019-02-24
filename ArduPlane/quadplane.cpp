@@ -1808,10 +1808,17 @@ void QuadPlane::control_run(void)
     default:
         break;
     }
+
     // we also stabilize using fixed wing surfaces
-    float speed_scaler = plane.get_speed_scaler();
-    plane.stabilize_roll(speed_scaler);
-    plane.stabilize_pitch(speed_scaler);
+    if (tailsitter.motor_mask == 0) {
+        float speed_scaler = plane.get_speed_scaler();
+        plane.stabilize_roll(speed_scaler);
+        plane.stabilize_pitch(speed_scaler);
+    } else {
+        // nothing to do here:
+        // copter tailsitters use AP_MotorsMatrixTS which actuates
+        // any fixed-wing control surfaces using the copter attitude controller
+    }
 }
 
 /*

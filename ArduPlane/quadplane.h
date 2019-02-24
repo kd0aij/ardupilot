@@ -233,6 +233,8 @@ private:
 
     // calculate a stopping distance for fixed-wing to vtol transitions
     float stopping_distance(void);
+
+    void log_CTHP(float, bool);
     
     AP_Int16 transition_time_ms;
 

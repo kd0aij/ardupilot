@@ -21,6 +21,10 @@ public:
 
     virtual void        output_motor_mask(float thrust, uint8_t mask, float rudder_dt) override;
 
+    float* get_rpyt() {
+        return _thrust_rpyt_out;
+    }
+
 protected:
     // configures the motors for the defined frame_class and frame_type
     virtual void        setup_motors(motor_frame_class frame_class, motor_frame_type frame_type) override;
