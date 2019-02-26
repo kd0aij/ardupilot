@@ -13,19 +13,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
-  control code for tailsitters. Enabled by setting Q_FRAME_CLASS=10 
+  control code for tailsitters. Enabled by setting Q_FRAME_CLASS=10
   or by setting Q_TAILSIT_MOTMX nonzero and Q_FRAME_CLASS and Q_FRAME_TYPE
   to a configuration supported by AP_MotorsMatrix
  */
 
+#include <math.h>
+
 #include "Plane.h"
+
+#define DEBUG_SPEED_SCALING 1
 
 /*
   return true when flying a tailsitter
  */
 bool QuadPlane::is_tailsitter(void) const
 {
-    return available() && ((frame_class == AP_Motors::MOTOR_FRAME_TAILSITTER) || 
+    return available() && ((frame_class == AP_Motors::MOTOR_FRAME_TAILSITTER) ||
                            (tailsitter.motor_mask != 0));
 }
 
@@ -85,12 +89,12 @@ void QuadPlane::tailsitter_output(void)
             throttle = motors->get_throttle_hover() * 100;
             SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, 0);
             pos_control->get_accel_z_pid().set_integrator(throttle*10);
-            
+
             if (mask == 0) {
                 // override AP_MotorsTailsitter throttles during back transition
                 SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle);
                 SRV_Channels::set_output_scaled(SRV_Channel::k_throttleLeft, throttle);
-                SRV_Channels::set_output_scaled(SRV_Channel::k_throttleRight, throttle);            
+                SRV_Channels::set_output_scaled(SRV_Channel::k_throttleRight, throttle);
             }
         }
         if (mask != 0) {
@@ -100,9 +104,9 @@ void QuadPlane::tailsitter_output(void)
         }
         return;
     }
-    
+
     // handle VTOL modes
-    // the MultiCopter rate controller has already been run in an earlier call 
+    // the MultiCopter rate controller has already been run in an earlier call
     // to motors_output() from quadplane.update()
     motors_output(false);
     plane.pitchController.reset_I();
@@ -212,45 +216,157 @@ void QuadPlane::tailsitter_check_input(void)
         int16_t roll_in = plane.channel_roll->get_control_in();
         int16_t yaw_in = plane.channel_rudder->get_control_in();
         plane.channel_roll->set_control_in(yaw_in);
+        // TODO: with earth-frame yaw, right aileron results in left yaw
+        // when the nose is not vertical. Hence it is preferable to use
+        // TAILSITTER_INPUT_MULTICOPTER when off vertical. This problem
+        // should go away with body-frame yaw, as in QACRO mode.
         plane.channel_rudder->set_control_in(-roll_in);
     }
 }
 
 /*
-  return true if we are a tailsitter transitioning to VTOL flight  
+  return true if we are a tailsitter transitioning to VTOL flight
  */
 bool QuadPlane::in_tailsitter_vtol_transition(void) const
 {
     return is_tailsitter() && in_vtol_mode() && transition_state == TRANSITION_ANGLE_WAIT_VTOL;
 }
 
+#ifdef DEBUG_SPEED_SCALING
+// first order IIR high pass filter
+// coefficients b0 = b, b1 = -b
+// equation: y_n = b0 x_n + b1 x_{n-1} - a y_{n-1}
+// given b1 = -b0 = b: y_n = b (x_n - x_{n-1} - a y_{n-1}
+// x1 is the new input value, y is the filtered result
+// x0 is used to save the previous input
+inline void high_pass(float x1, float &x0, float &y) {
+    // coefficients for nyquist/30 cutoff:
+    const float b = 0.974482;
+    const float a = -0.948964;
+    y = b * (x1 - x0) - a * y;
+    x0 = x1;
+}
+
+// log speed scaler and highpass filtered gyro rates for validation
+void log_CTHP(float spd_scaler, bool airspeed_enabled, Vector3f rates) {
+
+    // detect oscillation by monitoring gyros
+    static float in0[3] = {0};
+    static float hpOut[3] = {0};
+
+    // highpass filter each gyro output
+    high_pass(rates.x, in0[0], hpOut[0]);
+    high_pass(rates.y, in0[1], hpOut[1]);
+    high_pass(rates.z, in0[2], hpOut[2]);
+
+    // square then lowpass filter the highpass outputs
+    constexpr float lpcoef = 0.02f;
+    static float msq[3] = {0};
+
+    for (int i=0; i<3; i++) {
+        msq[i] = (1 - lpcoef) * msq[i] +lpcoef * sq(hpOut[i]);
+    }
+
+    static uint32_t last_log_time = 0;
+    uint32_t now = AP_HAL::millis();
+    if ((now - last_log_time) >= (1000 / 100)) {
+        last_log_time = now;
+
+        AP::logger().Write("CTHP", "TimeUS,MSQr,MSQp,MSQy,HPr,HPp,HPy,Scl,ASpd", "Qfffffffb",
+                            AP_HAL::micros64(),
+                            msq[0], msq[1], msq[2],
+                            hpOut[0], hpOut[1], hpOut[2],
+                            spd_scaler, airspeed_enabled);
+    }
+}
+#endif
+
 /*
-  account for speed scaling of control surfaces in hover
+  account for speed scaling of control surfaces in VTOL modes
 */
 void QuadPlane::tailsitter_speed_scaling(void)
 {
     const float hover_throttle = motors->get_throttle_hover();
     const float throttle = motors->get_throttle();
-    float scaling;
+    float tthr = 1.25f * hover_throttle;
 
-    if (is_zero(throttle)) {
-        scaling = tailsitter.throttle_scale_max;
+    // critical parameter: violent oscillations if too high
+    // sudden loss of attitude control if too low
+    constexpr float max_atten = 0.2f;
+    float aspeed;
+    float spd_scaler = 1;
+    bool airspeed_enabled = ahrs.airspeed_sensor_enabled();
+
+    if (tailsitter.motor_mask == 0) {
+        if (is_zero(throttle)) {
+            spd_scaler = tailsitter.throttle_scale_max;
+        } else {
+            spd_scaler = constrain_float(hover_throttle / throttle, 0, tailsitter.throttle_scale_max);
+        }
     } else {
-        scaling = constrain_float(hover_throttle / throttle, 0, tailsitter.throttle_scale_max);
-    }
+        // This is a "copter" tailsitter which does not need to boost gain
+        // in hover, but does need reduced gains when flying at high speed in Q modes:
 
-    // if no airspeed sensor reduce throws at large tilt angles (implies high airspeed)
-    if (!ahrs.airspeed_sensor_enabled()) {
-        // ramp down from 1 to max_atten at tilt angles from 45 to 80 degrees
-        constexpr float max_atten = 0.25f;
-        constexpr float c_trans_angle = cosf(M_PI_4);
-        constexpr float alpha = (1 - max_atten) / (c_trans_angle - cosf(radians(80)));
-        constexpr float beta = 1 - alpha * c_trans_angle;
-        const float c_tilt = ahrs_view->get_rotation_body_to_ned().c.z;
-        if (c_tilt < c_trans_angle) {
-            scaling = constrain_float(beta + alpha * c_tilt, max_atten, 1.0f);
+        // If there is an airspeed sensor use the measured airspeed
+        // The airspeed estimate based only on GPS and (estimated) wind is
+        // not sufficiently accurate for tailsitters.
+        // (based on tests in RealFlight 8 with 10kph wind)
+        // TODO: SITL always returns false from airspeed_sensor_enabled()
+        //  (sensor "unhealthy")
+        //  but airspeed_estimate() returns a value
+        if (airspeed_enabled && ahrs.airspeed_estimate(&aspeed)) {
+            // plane.get_speed_scaler() doesn't work well for copter tailsitters
+            // ramp down from 1 to max_atten as speed increases to airspeed_max
+            spd_scaler = constrain_float(1 - (aspeed / plane.aparm.airspeed_max), max_atten, 1.0f);
+        } else {
+            // if no airspeed sensor reduce control surface throws at large tilt
+            // angles (assuming high airspeed)
+
+            // ramp down from 1 to max_atten at tilt angles over trans_angle
+            // (angles here are represented by their cosines)
+            constexpr float c_trans_angle = cosf(.125f * M_PI);
+            constexpr float alpha = (1 - max_atten) / (c_trans_angle - cosf(radians(90)));
+            constexpr float beta = 1 - alpha * c_trans_angle;
+            const float c_tilt = ahrs_view->get_rotation_body_to_ned().c.z;
+            if (c_tilt < c_trans_angle) {
+                spd_scaler = constrain_float(beta + alpha * c_tilt, max_atten, 1.0f);
+                // reduce throttle attenuation threshold too
+                tthr = 0.5f * hover_throttle;
+            }
+        }
+        // if throttle is above hover thrust, apply additional attenuation
+        if (throttle > tthr) {
+            const float throttle_atten = 1 - (throttle - tthr) / (1 - tthr);
+            spd_scaler *= throttle_atten;
+            spd_scaler = constrain_float(spd_scaler, max_atten, 1.0f);
         }
     }
+    // limit positive and negative slew rates of applied speed scaling
+    constexpr float posTC = 5.0f;   // seconds
+    constexpr float negTC = 2.0f;   // seconds
+    const float posdelta = plane.G_Dt / posTC;
+    const float negdelta = plane.G_Dt / negTC;
+    static float last_scale = 0;
+    static float scale = 0;
+    if ((spd_scaler - last_scale) > 0) {
+        if ((spd_scaler - last_scale) > posdelta) {
+            scale += posdelta;
+        } else {
+            scale = spd_scaler;
+        }
+    } else {
+        if ((spd_scaler - last_scale) < -negdelta) {
+            scale -= negdelta;
+        } else {
+            scale = spd_scaler;
+        }
+    }
+    last_scale = scale;
+
+    if (DEBUG_SPEED_SCALING) {
+        log_CTHP(scale, airspeed_enabled, ahrs_view->get_gyro_latest());
+    }
+
     const SRV_Channel::Aux_servo_function_t functions[4] = {
         SRV_Channel::Aux_servo_function_t::k_aileron,
         SRV_Channel::Aux_servo_function_t::k_elevator,
@@ -258,9 +374,9 @@ void QuadPlane::tailsitter_speed_scaling(void)
         SRV_Channel::Aux_servo_function_t::k_tiltMotorRight};
     for (uint8_t i=0; i<ARRAY_SIZE(functions); i++) {
         int32_t v = SRV_Channels::get_output_scaled(functions[i]);
-        v *= scaling;
+        v *= scale;
         v = constrain_int32(v, -SERVO_MAX, SERVO_MAX);
         SRV_Channels::set_output_scaled(functions[i], v);
     }
 }
-    
+
