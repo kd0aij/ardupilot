@@ -58,9 +58,15 @@ void AP_MotorsMatrixTS::output_to_motors()
     AP_MotorsMatrix::output_to_motors();
 
     // also actuate control surfaces
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron,  -_yaw_in * SERVO_OUTPUT_RANGE);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, _pitch_in * SERVO_OUTPUT_RANGE);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, _roll_in * SERVO_OUTPUT_RANGE);
+    if (_aileron_factor > 0) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_aileron,  -_yaw_in * _aileron_factor * SERVO_OUTPUT_RANGE);
+    }
+    if (_elevator_factor > 0) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, _pitch_in * _elevator_factor * SERVO_OUTPUT_RANGE);
+    }
+    if (_rudder_factor > 0) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, _roll_in * _rudder_factor * SERVO_OUTPUT_RANGE);
+    }
 }
 
 void AP_MotorsMatrixTS::output_armed_stabilizing()
@@ -94,18 +100,25 @@ void AP_MotorsMatrixTS::setup_motors(motor_frame_class frame_class, motor_frame_
                     // motors 1,2 are counter-rotating, as are motors 3,4
                     // left wing motor is CW (looking from front)
                     // don't think it matters which of 3,4 is CW
+                    // elevons on wings
                     add_motor(AP_MOTORS_MOT_1,  90, 0, 2);
                     add_motor(AP_MOTORS_MOT_2, -90, 0, 4);
                     add_motor(AP_MOTORS_MOT_3,   0, 0, 1);
                     add_motor(AP_MOTORS_MOT_4, 180, 0, 3);
+                    _aileron_factor = 1;
+                    _elevator_factor = 1;
+                    _rudder_factor = 0;
                     success = true;
                     break;
                 case MOTOR_FRAME_TYPE_X:
-                    // PLUS_TS layout rotated 45 degrees about X axis
+                    // PLUS motor layout rotated 45 degrees about X axis
                     add_motor(AP_MOTORS_MOT_1,   45, 0, 1);
                     add_motor(AP_MOTORS_MOT_2, -135, 0, 3);
                     add_motor(AP_MOTORS_MOT_3,  -45, 0, 4);
                     add_motor(AP_MOTORS_MOT_4,  135, 0, 2);
+                    _aileron_factor = 1;
+                    _elevator_factor = 1;
+                    _rudder_factor = 0;
                     success = true;
                     break;
                 default:

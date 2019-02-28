@@ -27,4 +27,10 @@ protected:
 
     // calculate motor outputs
     void                output_armed_stabilizing() override;
+    
+    // control surface gain factors
+    float _aileron_factor;
+    float _elevator_factor;
+    float _rudder_factor;
+    
 };
