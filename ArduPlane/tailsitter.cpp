@@ -173,14 +173,14 @@ void QuadPlane::tailsitter_output(void)
         // calculate ratio of gains
         float fw_ratio = (aspeed - tailsitter.scaling_speed_min) / scaling_range;
         fw_ratio = constrain_float(fw_ratio, 0.0f, 1.0f);
-        const float VTOL_rato = 1.0f - fw_ratio;
+        const float VTOL_ratio = 1.0f - fw_ratio;
 
         // calculate interpolated outputs
-        aileron = aileron * VTOL_rato + fw_aileron * fw_ratio;
-        elevator = elevator * VTOL_rato + fw_elevator * fw_ratio;
-        rudder = rudder * VTOL_rato + fw_rudder * fw_ratio;
-        tilt_left = tilt_left * VTOL_rato + fw_tilt_left * fw_ratio;
-        tilt_right = tilt_right * VTOL_rato + fw_tilt_right * fw_ratio;
+        aileron = aileron * VTOL_ratio + fw_aileron * fw_ratio;
+        elevator = elevator * VTOL_ratio + fw_elevator * fw_ratio;
+        rudder = rudder * VTOL_ratio + fw_rudder * fw_ratio;
+        tilt_left = tilt_left * VTOL_ratio + fw_tilt_left * fw_ratio;
+        tilt_right = tilt_right * VTOL_ratio + fw_tilt_right * fw_ratio;
     }
 
     if (tailsitter.input_mask_chan > 0 &&
@@ -285,10 +285,10 @@ float QuadPlane::get_tailsitter_speed_scaling(void)
 {
     const float hover_throttle = motors->get_throttle_hover();
     const float throttle = motors->get_throttle();
-    float spd_scaler = 1;
+    float spd_scaler = 1.0f;
 
-    // If throttle_scale_max is => 1, boost gains at low throttle
     if (tailsitter.throttle_scale_max >= 1) {
+        // boost gains at low throttle
         if (is_zero(throttle)) {
             spd_scaler = tailsitter.throttle_scale_max;
         } else {
@@ -297,25 +297,23 @@ float QuadPlane::get_tailsitter_speed_scaling(void)
         return spd_scaler;
 
     } else {
-        // reduce gains when flying at high speed in Q modes:
-
-        // critical parameter: violent oscillations if too high
-        // sudden loss of attitude control if too low
-        constexpr float max_atten = 0.2f;
-        float tthr = 1.25f * hover_throttle;
-        float aspeed;
-        bool airspeed_enabled = ahrs.airspeed_sensor_enabled();
-
-        // If there is an airspeed sensor use the measured airspeed
-        // The airspeed estimate based only on GPS and (estimated) wind is
-        // not sufficiently accurate for tailsitters.
-        // (based on tests in RealFlight 8 with 10kph wind)
-        if (airspeed_enabled && ahrs.airspeed_estimate(&aspeed)) {
-            // plane.get_speed_scaler() doesn't work well for copter tailsitters
-            // ramp down from 1 to max_atten as speed increases to airspeed_max
-            spd_scaler = constrain_float(1 - (aspeed / plane.aparm.airspeed_max), max_atten, 1.0f);
+        const float scaling_range = tailsitter.scaling_speed_max - tailsitter.scaling_speed_min;
+        if (!is_zero(scaling_range)) {
+            return 1.0f;
         } else {
-            // if no airspeed sensor reduce control surface throws at large tilt
+            // reduce gains when flying at high speed in Q modes:
+
+            // critical parameter: violent oscillations if too high
+            // sudden loss of attitude control if too low
+            constexpr float max_atten = 0.2f;
+            float tthr = 1.25f * hover_throttle;
+
+            // If gain interpolation params are set, don't do this...
+            // Note that the airspeed estimate based only on GPS and (estimated) wind is
+            // not sufficiently accurate for tailsitters.
+            // (based on tests in RealFlight 8 with 10kph wind)
+
+            // reduce control surface throws at large tilt
             // angles (assuming high airspeed)
 
             // ramp down from 1 to max_atten at tilt angles over trans_angle
@@ -329,22 +327,21 @@ float QuadPlane::get_tailsitter_speed_scaling(void)
                 // reduce throttle attenuation threshold too
                 tthr = 0.5f * hover_throttle;
             }
-        }
-        // if throttle is above hover thrust, apply additional attenuation
-        if (throttle > tthr) {
-            const float throttle_atten = 1 - (throttle - tthr) / (1 - tthr);
-            spd_scaler *= throttle_atten;
-            spd_scaler = constrain_float(spd_scaler, max_atten, 1.0f);
-        }
+            // if throttle is above hover thrust, apply additional attenuation
+            if (throttle > tthr) {
+                const float throttle_atten = 1 - (throttle - tthr) / (1 - tthr);
+                spd_scaler *= throttle_atten;
+                spd_scaler = constrain_float(spd_scaler, max_atten, 1.0f);
+            }
 
-        // limit positive and negative slew rates of applied speed scaling
-        constexpr float posTC = 5.0f;   // seconds
-        constexpr float negTC = 2.0f;   // seconds
-        const float posdelta = plane.G_Dt / posTC;
-        const float negdelta = plane.G_Dt / negTC;
-        static float last_scale = 0;
-        const float scale = constrain_float(spd_scaler, last_scale - negdelta, last_scale + posdelta);
-        last_scale = scale;
-        return scale;
+            // limit positive and negative slew rates of applied speed scaling
+            constexpr float posTC = 5.0f;   // seconds
+            constexpr float negTC = 2.0f;   // seconds
+            const float posdelta = plane.G_Dt / posTC;
+            const float negdelta = plane.G_Dt / negTC;
+            spd_scaler = constrain_float(spd_scaler, last_spd_scaler - negdelta, last_spd_scaler + posdelta);
+            last_spd_scaler = spd_scaler;
+            return spd_scaler;
+        }
     }
 }

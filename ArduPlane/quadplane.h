@@ -437,6 +437,9 @@ private:
         AP_Float scaling_speed_min;
         AP_Float scaling_speed_max;
     } tailsitter;
+    
+    // tailsitter speed scaler
+    float last_spd_scaler = 1.0f;
 
     // the attitude view of the VTOL attitude controller
     AP_AHRS_View *ahrs_view;
