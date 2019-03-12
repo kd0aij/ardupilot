@@ -288,7 +288,6 @@ float QuadPlane::get_tailsitter_speed_scaling(void)
     const float throttle = motors->get_throttle();
     float spd_scaler = 1.0f;
 
-    // If throttle_scale_max is => 1, boost gains at low throttle
     if (tailsitter.throttle_scale_max >= 1) {
         // boost gains at low throttle
         if (is_zero(throttle)) {
@@ -303,45 +302,44 @@ float QuadPlane::get_tailsitter_speed_scaling(void)
         if (!is_zero(scaling_range)) {
             return 1.0f;
         } else {
-        // reduce gains when flying at high speed in Q modes:
+            // reduce gains when flying at high speed in Q modes:
 
-        // critical parameter: violent oscillations if too high
-        // sudden loss of attitude control if too low
-        constexpr float max_atten = 0.2f;
-        float tthr = 1.25f * hover_throttle;
-        float aspeed;
-        bool airspeed_enabled = ahrs.airspeed_sensor_enabled();
+            // critical parameter: violent oscillations if too high
+            // sudden loss of attitude control if too low
+            const float max_atten = tailsitter.throttle_scale_max;
+            float tthr = 1.25f * hover_throttle;
 
             // If gain interpolation params are set, don't do this...
             // Note that the airspeed estimate based only on GPS and (estimated) wind is
-        // not sufficiently accurate for tailsitters.
-        // (based on tests in RealFlight 8 with 10kph wind)
+            // not sufficiently accurate for tailsitters.
+            // (based on tests in RealFlight 8 with 10kph wind)
+
             // reduce control surface throws at large tilt
             // angles (assuming high airspeed)
 
             // ramp down from 1 to max_atten at tilt angles over trans_angle
             // (angles here are represented by their cosines)
             constexpr float c_trans_angle = cosf(.125f * M_PI);
-            constexpr float alpha = (1 - max_atten) / (c_trans_angle - cosf(radians(90)));
+            const float alpha = (1 - max_atten) / (c_trans_angle - cosf(radians(90)));
             constexpr float beta = 1 - alpha * c_trans_angle;
             const float c_tilt = ahrs_view->get_rotation_body_to_ned().c.z;
             if (c_tilt < c_trans_angle) {
                 spd_scaler = constrain_float(beta + alpha * c_tilt, max_atten, 1.0f);
                 // reduce throttle attenuation threshold too
                 tthr = 0.5f * hover_throttle;
-	    }
-	    // if throttle is above hover thrust, apply additional attenuation
-	    if (throttle > tthr) {
-	        const float throttle_atten = 1 - (throttle - tthr) / (1 - tthr);
-	        spd_scaler *= throttle_atten;
-	        spd_scaler = constrain_float(spd_scaler, max_atten, 1.0f);
-	    }
+            }
+            // if throttle is above hover thrust, apply additional attenuation
+            if (throttle > tthr) {
+                const float throttle_atten = 1 - (throttle - tthr) / (1 - tthr);
+                spd_scaler *= throttle_atten;
+                spd_scaler = constrain_float(spd_scaler, max_atten, 1.0f);
+            }
 
-	    // limit positive and negative slew rates of applied speed scaling
-	    constexpr float posTC = 5.0f;   // seconds
-	    constexpr float negTC = 2.0f;   // seconds
-	    const float posdelta = plane.G_Dt / posTC;
-	    const float negdelta = plane.G_Dt / negTC;
+            // limit positive and negative slew rates of applied speed scaling
+            constexpr float posTC = 2.0f;   // seconds
+            constexpr float negTC = 1.0f;   // seconds
+            const float posdelta = plane.G_Dt / posTC;
+            const float negdelta = plane.G_Dt / negTC;
             spd_scaler = constrain_float(spd_scaler, last_spd_scaler - negdelta, last_spd_scaler + posdelta);
             last_spd_scaler = spd_scaler;
             return spd_scaler;
