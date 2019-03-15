@@ -179,7 +179,9 @@ private:
     const enum Rotation rotation;
     AP_AHRS &ahrs;
 
+    // body frame rotation for this View
     Matrix3f rot_view;
+    // transpose of rot_view
     Matrix3f rot_view_T;
     Matrix3f rot_body_to_ned;
     Vector3f gyro;
