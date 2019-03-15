@@ -180,6 +180,7 @@ private:
     AP_AHRS &ahrs;
 
     Matrix3f rot_view;
+    Matrix3f rot_view_T;
     Matrix3f rot_body_to_ned;
     Vector3f gyro;
 
