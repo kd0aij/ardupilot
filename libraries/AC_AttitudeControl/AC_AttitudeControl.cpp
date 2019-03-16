@@ -545,7 +545,10 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, 
 
     // Update the unused targets attitude based on current attitude to condition mode change
     _ahrs.get_quat_body_to_ned(_attitude_target_quat);
+
+    // calculate the attitude target euler angles
     _attitude_target_quat.to_euler(_attitude_target_euler_angle.x, _attitude_target_euler_angle.y, _attitude_target_euler_angle.z);
+
     // Convert body-frame angular velocity into euler angle derivative of desired attitude
     ang_vel_to_euler_rate(_attitude_target_euler_angle, _attitude_target_ang_vel, _attitude_target_euler_rate);
     _rate_target_ang_vel = _attitude_target_ang_vel;
