@@ -358,7 +358,7 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_yaw(float euler_roll_angle
     attitude_controller_run_quat();
 }
 
-// Command euler pitch and yaw angles and roll rate
+// Command euler pitch and yaw angles and roll rate (used only by tailsitter quadplanes)
 // Multicopter style controls: roll stick is tailsitter bodyframe yaw in hover
 void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll_m(float euler_yaw_rate_cds, float euler_pitch_cd, float body_roll_cd)
 {
@@ -400,7 +400,7 @@ void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll_m(float 
     _rate_target_ang_vel = update_ang_vel_target_from_att_error(att_error);
 }
 
-// Command euler pitch and yaw angles and roll rate
+// Command euler pitch and yaw angles and roll rate (used only by tailsitter quadplanes)
 // Plane style controls: yaw stick is tailsitter bodyframe yaw in hover
 void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll_p(float euler_yaw_rate_cds, float euler_pitch_cd, float body_roll_cd)
 {
