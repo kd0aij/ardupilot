@@ -278,7 +278,7 @@ const AP_Param::GroupInfo QuadPlane::var_info[] = {
     // @Param: TAILSIT_INPUT
     // @DisplayName: Tailsitter input type
     // @Description: This controls whether stick input when hovering as a tailsitter follows the conventions for fixed wing hovering or multicopter hovering. When multicopter input is selected the roll stick will roll the aircraft in earth frame and yaw stick will yaw in earth frame. When using fixed wing input the roll and yaw sticks are swapped so that the roll stick controls earth-frame yaw and rudder controls earth-frame roll. When body-frame roll is selected, the yaw stick controls earth-frame yaw rate and the roll stick controls roll in the tailsitter's body frame.
-    // @Values: 0:MultiCopterInput,1:FixedWingInput,2:BodyFrameRoll
+    // @Values: 0:MultiCopterInput,1:FixedWingInput,2:BodyFrameRoll_M,3:BodyFrameRoll_P
     AP_GROUPINFO("TAILSIT_INPUT", 50, QuadPlane, tailsitter.input_type, TAILSITTER_INPUT_MULTICOPTER),
 
     // @Param: TAILSIT_MASK
