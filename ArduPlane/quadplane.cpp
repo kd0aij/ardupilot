@@ -926,11 +926,11 @@ void QuadPlane::control_qacro(void)
             // Note that the 90 degree Y rotation for copter mode swaps body-frame roll and yaw
             // acro_roll_rate param applies to yaw in copter frame
             // no parameter for acro yaw rate; just use the normal one since the default is 100 deg/sec
-            target_roll =  plane.channel_rudder->norm_input() * yaw_rate_max * 100.0f;
-            target_yaw  = -plane.channel_roll->norm_input() * plane.g.acro_roll_rate * 100.0f;
+            target_roll =  plane.channel_rudder->norm_input() * plane.g.acro_roll_rate * 100.0f;
+            target_yaw  = -plane.channel_roll->norm_input() * plane.g2.acro_yaw_rate * 100.0f;
         } else {
             target_roll = plane.channel_roll->norm_input() * plane.g.acro_roll_rate * 100.0f;
-            target_yaw  = plane.channel_rudder->norm_input() * yaw_rate_max * 100.0;
+            target_yaw  = plane.channel_rudder->norm_input() * plane.g2.acro_yaw_rate * 100.0;
         }
 
         // get pilot's desired throttle

@@ -1220,6 +1220,15 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: User
     AP_GROUPINFO("TKOFF_TIMEOUT", 19, ParametersG2, takeoff_timeout, 0),
     
+    // @Param: ACRO_YAW_RATE
+    // @DisplayName: ACRO mode yaw rate, used by QACRO mode
+    // @Description: The maximum yaw rate at full stick deflection in ACRO mode
+    // @Units: deg/s
+    // @Range: 10 500
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("ACRO_YAW_RATE", 20, ParametersG2, acro_yaw_rate, 90),
+
     AP_GROUPEND
 };
 
