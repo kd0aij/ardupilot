@@ -16,11 +16,18 @@ void Plane::Log_Write_Attitude(void)
         //Plane does not have the concept of navyaw. This is a placeholder.
         targets.z = 0;
     }
-    
+
     if (quadplane.tailsitter_active() || quadplane.in_vtol_mode()) {
-        // we need the attitude targets from the AC_AttitudeControl controller, as they
-        // account for the acceleration limits
-        targets = quadplane.attitude_control->get_att_target_euler_cd();
+        if (quadplane.tailsitter.input_type == quadplane.TAILSITTER_INPUT_BF_ROLL_M ||
+            quadplane.tailsitter.input_type == quadplane.TAILSITTER_INPUT_BF_ROLL_P) {
+            // bodyframe roll mode doesn't play well with Euler angles
+            quadplane.attitude_control->get_attitude_target_quat().to_euler(targets.x, targets.y, targets.z);
+            targets *= degrees(100.0f);
+        } else {
+            // we need the attitude targets from the AC_AttitudeControl controller, as they
+            // account for the acceleration limits
+            targets = quadplane.attitude_control->get_att_target_euler_cd();
+        }
         logger.Write_AttitudeView(*quadplane.ahrs_view, targets);
     } else {
         logger.Write_Attitude(ahrs, targets);
