@@ -416,8 +416,11 @@ void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll_p(float 
     const float spitch = fabsf(sinf(euler_pitch));
 
     // new heading
-    float yaw_rate = euler_yaw_rate * spitch + body_roll * cpitch;
-    _attitude_target_euler_angle.z = wrap_PI(_attitude_target_euler_angle.z + yaw_rate * _dt);
+    // Could mix roll into yaw here for automatic turn coordination, but it would
+    // need an additional scale parameter.
+    //float yaw_rate = euler_yaw_rate * spitch - body_roll * cpitch;
+    //_attitude_target_euler_angle.z = wrap_PI(_attitude_target_euler_angle.z + yaw_rate * _dt);
+    _attitude_target_euler_angle.z = wrap_PI(_attitude_target_euler_angle.z + euler_yaw_rate * _dt);
 
     // init attitude target to desired euler yaw and pitch with zero roll
     _attitude_target_quat.from_euler(0, euler_pitch, _attitude_target_euler_angle.z);
