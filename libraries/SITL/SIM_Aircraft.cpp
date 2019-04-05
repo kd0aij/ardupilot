@@ -570,10 +570,10 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
             break;
         }
         case GROUND_BEHAVIOR_TAILSITTER: {
-            // point straight up
+            // point almost straight up
             float r, p, y;
             dcm.to_euler(&r, &p, &y);
-            dcm.from_euler(0.0f, radians(90), y);
+            dcm.from_euler(0.0f, radians(85), y);
             // no movement
             if (accel_earth.z > -1.1*GRAVITY_MSS) {
                 velocity_ef.zero();
