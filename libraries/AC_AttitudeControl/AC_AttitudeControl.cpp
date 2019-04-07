@@ -548,7 +548,10 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, 
 
     // Update the unused targets attitude based on current attitude to condition mode change
     _ahrs.get_quat_body_to_ned(_attitude_target_quat);
+
+    // calculate the attitude target euler angles
     _attitude_target_quat.to_euler(_attitude_target_euler_angle.x, _attitude_target_euler_angle.y, _attitude_target_euler_angle.z);
+
     // Convert body-frame angular velocity into euler angle derivative of desired attitude
     ang_vel_to_euler_rate(_attitude_target_euler_angle, _attitude_target_ang_vel, _attitude_target_euler_rate);
     _rate_target_ang_vel = _attitude_target_ang_vel;
@@ -563,9 +566,31 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, 
     float yaw_rate_rads = radians(yaw_rate_bf_cds*0.01f);
 
     // Update attitude error
-    Vector3f gyro_latest = _ahrs.get_gyro_latest();
+    Vector3f attitude_error_vector;
+    _attitude_ang_error.to_axis_angle(attitude_error_vector);
+
+    static int cnt=0;
+    if (cnt++>100) {
+        cnt = 0;
+        hal.console->printf("attitude_error_vector: %5.3f, %5.3f, %5.3f, len: %5.3f\n",
+                            attitude_error_vector.x, attitude_error_vector.y, attitude_error_vector.z,
+                            attitude_error_vector.length());
+    }
+
     Quaternion attitude_ang_error_update_quat;
-    attitude_ang_error_update_quat.from_axis_angle(Vector3f((_attitude_target_ang_vel.x-gyro_latest.x) * _dt, (_attitude_target_ang_vel.y-gyro_latest.y) * _dt, (_attitude_target_ang_vel.z-gyro_latest.z) * _dt));
+    // limit the integrated error angle
+    float err_mag = attitude_error_vector.length();
+    if (err_mag > AC_ATTITUDE_THRUST_ERROR_ANGLE) {
+        attitude_error_vector *= AC_ATTITUDE_THRUST_ERROR_ANGLE / err_mag;
+        _attitude_ang_error.from_axis_angle(attitude_error_vector);
+    }
+
+    Vector3f gyro_latest = _ahrs.get_gyro_latest();
+    Vector3f target_ang_vel = Vector3f((_attitude_target_ang_vel.x-gyro_latest.x),
+                                       (_attitude_target_ang_vel.y-gyro_latest.y),
+                                       (_attitude_target_ang_vel.z-gyro_latest.z));
+    target_ang_vel *= _dt;
+    attitude_ang_error_update_quat.from_axis_angle(target_ang_vel);
     _attitude_ang_error = attitude_ang_error_update_quat * _attitude_ang_error;
 
     // Compute acceleration-limited body frame rates
@@ -580,7 +605,7 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, 
     _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
 
     // Update the unused targets attitude based on current attitude to condition mode change
-    _attitude_target_quat = attitude_vehicle_quat*_attitude_ang_error;
+    _attitude_target_quat = attitude_vehicle_quat * _attitude_ang_error;
 
     // calculate the attitude target euler angles
     _attitude_target_quat.to_euler(_attitude_target_euler_angle.x, _attitude_target_euler_angle.y, _attitude_target_euler_angle.z);
@@ -589,8 +614,6 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, 
     ang_vel_to_euler_rate(_attitude_target_euler_angle, _attitude_target_ang_vel, _attitude_target_euler_rate);
 
     // Compute the angular velocity target from the integrated rate error
-    Vector3f attitude_error_vector;
-    _attitude_ang_error.to_axis_angle(attitude_error_vector);
     _rate_target_ang_vel = update_ang_vel_target_from_att_error(attitude_error_vector);
     _rate_target_ang_vel += _attitude_target_ang_vel;
 
