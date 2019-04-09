@@ -71,7 +71,7 @@ void AP_MotorsMatrixTS::output_armed_stabilizing()
     float   pitch_thrust;               // pitch thrust input value, +/- 1.0
     float   throttle_thrust;            // throttle thrust input value, 0.0 - 1.0
     float   thrust_max = 0.0f;          // highest motor value
-    float   thr_adj = 0.0f;             // the difference between the pilot's desired throttle and throttle_thrust_best_rpy
+//    float   thr_adj = 0.0f;             // the difference between the pilot's desired throttle and throttle_thrust_best_rpy
 
     // apply voltage and air pressure compensation
     const float compensation_gain = get_compensation_gain(); // compensation for battery voltage and altitude
@@ -101,17 +101,17 @@ void AP_MotorsMatrixTS::output_armed_stabilizing()
     }
 
     // if max thrust is more than one reduce average throttle
-    if (thrust_max > 1.0f) {
-        thr_adj = 1.0f - thrust_max;
-        limit.throttle_upper = true;
-        limit.roll_pitch = true;
-        for (int i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
-            if (motor_enabled[i]) {
-                // calculate the thrust outputs for roll and pitch
-                _thrust_rpyt_out[i] += thr_adj;
-            }
-        }
-    }
+//    if (thrust_max > 1.0f) {
+//        thr_adj = 1.0f - thrust_max;
+//        limit.throttle_upper = true;
+//        limit.roll_pitch = true;
+//        for (int i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
+//            if (motor_enabled[i]) {
+//                // calculate the thrust outputs for roll and pitch
+//                _thrust_rpyt_out[i] += thr_adj;
+//            }
+//        }
+//    }
 
 }
 
