@@ -128,7 +128,8 @@ void QuadPlane::tailsitter_output(void)
           power law. This allows the motors to point straight up for
           takeoff without integrator windup
          */
-        int32_t pitch_error_cd = (plane.nav_pitch_cd - ahrs_view->pitch_sensor) * 0.5;
+        float des_pitch_cd = attitude_control->get_att_target_euler_cd().y;
+        int32_t pitch_error_cd = (des_pitch_cd - ahrs_view->pitch_sensor) * 0.5;
         float extra_pitch = constrain_float(pitch_error_cd, -SERVO_MAX, SERVO_MAX) / SERVO_MAX;
         float extra_sign = extra_pitch > 0?1:-1;
         float extra_elevator = extra_sign * powf(fabsf(extra_pitch), tailsitter.vectored_hover_power) * SERVO_MAX;
