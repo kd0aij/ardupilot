@@ -570,10 +570,18 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
             break;
         }
         case GROUND_BEHAVIOR_TAILSITTER: {
-            // point almost straight up
-            float r, p, y;
-            dcm.to_euler(&r, &p, &y);
-            dcm.from_euler(0.0f, radians(85), y);
+            // point straight up
+            // first column of dcm is the body frame X represented in earth frame
+            Vector3f bodyX_E = dcm.colx();
+            // rotation to align X_E with earth Z
+            Vector3f axisAngle = bodyX_E % Vector3f(0.0f, 0.0f, 1.0f);
+            // convert axisAngle to quaternion, then rotation matrix
+            Quaternion rot_90;
+            rot_90.from_axis_angle(axisAngle);
+            Matrix3f R;
+            rot_90.rotation_matrix(R);
+            // rotate dcm
+            dcm = R * dcm;
             // no movement
             if (accel_earth.z > -1.1*GRAVITY_MSS) {
                 velocity_ef.zero();
