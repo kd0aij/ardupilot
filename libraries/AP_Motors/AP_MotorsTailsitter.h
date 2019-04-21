@@ -44,4 +44,5 @@ protected:
     float _thrust_left;  // 0..1
     float _thrust_right;  // 0..1
     float _thrust_rear;  // 0..1
+    uint32_t _last_rear_thrust;
 };

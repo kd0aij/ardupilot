@@ -106,8 +106,18 @@ void AP_MotorsTailsitter::output_to_motors()
         case SpoolState::SPOOLING_DOWN:
             SRV_Channels::set_output_pwm(SRV_Channel::k_throttleLeft, output_to_pwm(thrust_to_actuator(_thrust_left)));
             SRV_Channels::set_output_pwm(SRV_Channel::k_throttleRight, output_to_pwm(thrust_to_actuator(_thrust_right)));
-            // don't want spin_min to apply to the rear motor
-            SRV_Channels::set_output_pwm(SRV_Channel::k_motor4, output_to_pwm(_thrust_rear));
+            // track rear motor activity
+            uint32_t now = AP_HAL::millis();
+            if (_thrust_rear > .01) {
+                _last_rear_thrust = now;
+            }
+            if ((now - _last_rear_thrust) < 500) {
+                // don't want spin_min to apply to the rear motor
+                SRV_Channels::set_output_pwm(SRV_Channel::k_motor4, output_to_pwm(_thrust_rear));
+            } else {
+                // shut the rear motor down if it's been at idle for a while
+                SRV_Channels::set_output_pwm(SRV_Channel::k_motor4, get_pwm_output_min());
+            }
             break;
     }
 
