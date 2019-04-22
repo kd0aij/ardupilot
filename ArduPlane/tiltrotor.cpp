@@ -112,7 +112,20 @@ void QuadPlane::tiltrotor_continuous_update(void)
     if (plane.control_mode == &plane.mode_qstabilize ||
         plane.control_mode == &plane.mode_qhover ||
         plane.control_mode == &plane.mode_qautotune) {
-        tiltrotor_slew(0);
+        // the flap channel input controls the forward tilt of the motors
+        // motor tilt is [0-1] over the full range with vertical being tilt.tilt_yaw_angle/(90+tilt.tilt_yaw_angle)
+        // and 1 being full forward
+        float vertical = 0; //tilt.tilt_yaw_angle/(90+tilt.tilt_yaw_angle);
+        float tilt_range = 1.0f - vertical;
+        // convert channel input from [-1,1] to [0,1]
+        float flap_in = (1.0f + RC_Channels::rc_channel(plane.g.flapin_channel)->norm_input()) / 2;
+        float des_tilt = constrain_float(vertical + tilt_range * flap_in, 0, 1);
+        static float last_tilt = 0;
+        if (!is_zero(des_tilt - last_tilt)) {
+            last_tilt = des_tilt;
+            printf("tilt_in: %5.3f des_tilt: %f\n", flap_in, des_tilt);
+        }
+        tiltrotor_slew(des_tilt);
         return;
     }
 
