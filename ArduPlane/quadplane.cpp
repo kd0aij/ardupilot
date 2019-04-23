@@ -354,9 +354,9 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     AP_SUBGROUPPTR(loiter_nav, "LOIT_",  2, QuadPlane, AC_Loiter),
 
     // @Param: TAILSIT_THSCMX
-    // @DisplayName: Maximum control throttle scaling value
-    // @Description: Maximum value of throttle scaling for tailsitter velocity scaling, reduce this value to remove low thorottle D ossilaitons 
-    // @Range: 1 5
+    // @DisplayName: Maximum gain boost or attenuation based on throttle and attitude
+    // @Description: If > 1, maximum gain attenuation at high throttle/tilt angle, if > 1, max gain boost at low throttle
+    // @Range: 0.1 5
     // @User: Standard
     AP_GROUPINFO("TAILSIT_THSCMX", 3, QuadPlane, tailsitter.throttle_scale_max, 5),
 
@@ -408,6 +408,21 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @User: Standard
     // @Bitmask: 0:Motor 1,1:Motor 2,2:Motor 3,3:Motor 4, 4:Motor 5,5:Motor 6,6:Motor 7,7:Motor 8
     AP_GROUPINFO("TAILSIT_MOTMX", 9, QuadPlane, tailsitter.motor_mask, 0),
+    // @Param: TAILSIT_SPDMIN
+    // @DisplayName: Tailsitter minimum airspeed scaling
+    // @Description: bellow this airspeed tailsiter is controlled by copter gains, gains scaled linearly between TAILSIT_SPDMIN and TAILSIT_SPDMAX, this apply s in Q modes and during Q assist if enabled
+    // @Units: m/s
+    // @Range: 0 50
+    // @User: Standard
+    AP_GROUPINFO("TAILSIT_SPDMIN", 14, QuadPlane, tailsitter.scaling_speed_min, 10),
+
+    // @Param: TAILSIT_SPDMAX
+    // @DisplayName: Tailsitter maximum airspeed scaling
+    // @Description: above this airspeed tailsiter is controlled by plane gains, gains scaled linearly between TAILSIT_SPDMIN and TAILSIT_SPDMAX, this apply s in Q modes and during Q assist if enabled
+    // @Units: m/s
+    // @Range: 0 50
+    // @User: Standard
+    AP_GROUPINFO("TAILSIT_SPDMAX", 15, QuadPlane, tailsitter.scaling_speed_max, 20),
 
     // @Param: THROTTLE_EXPO
     // @DisplayName: Throttle expo strength

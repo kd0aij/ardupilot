@@ -123,9 +123,9 @@ public:
     // check if we have completed transition to vtol
     bool tailsitter_transition_vtol_complete(void) const;
 
-    // account for surface speed scaling in hover
-    void tailsitter_speed_scaling(void);
-    
+    // calculate speed scaler of control surfaces in VTOL modes
+    float get_tailsitter_speed_scaling(void);
+
     // user initiated takeoff for guided mode
     bool do_user_takeoff(float takeoff_altitude);
 
@@ -457,7 +457,12 @@ private:
         AP_Float throttle_scale_max;
         AP_Float max_roll_angle;
         AP_Int16 motor_mask;
+        AP_Float scaling_speed_min;
+        AP_Float scaling_speed_max;
     } tailsitter;
+    
+    // tailsitter speed scaler
+    float last_spd_scaler = 1.0f;
 
     // the attitude view of the VTOL attitude controller
     AP_AHRS_View *ahrs_view;
