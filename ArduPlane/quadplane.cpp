@@ -355,10 +355,10 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
 
     // @Param: TAILSIT_THSCMX
     // @DisplayName: Maximum control throttle scaling value
-    // @Description: Maximum value of throttle scaling for tailsitter velocity scaling, reduce this value to remove low thorottle D ossilaitons 
+    // @Description: Maximum value of throttle scaling for tailsitter velocity scaling, reduce this value to remove low throttle oscillations
     // @Range: 1 5
     // @User: Standard
-    AP_GROUPINFO("TAILSIT_THSCMX", 3, QuadPlane, tailsitter.throttle_scale_max, 5),
+    AP_GROUPINFO("TAILSIT_THSCMX", 3, QuadPlane, tailsitter.throttle_scale_max, 2),
 
     // @Param: TRIM_PITCH
     // @DisplayName: Quadplane AHRS trim pitch
@@ -460,7 +460,6 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("TKOFF_ARSP_LIM", 15, QuadPlane, maximum_takeoff_airspeed, 0),
-
     // @Param: ASSIST_ALT
     // @DisplayName: Quadplane assistance altitude
     // @Description: This is the altitude below which quadplane assistance will be triggered. This acts the same way as Q_ASSIST_ANGLE and Q_ASSIST_SPEED, but triggers if the aircraft drops below the given altitude while the VTOL motors are not running. A value of zero disables this feature. The altutude is calculated as being above ground level. The height above ground is given from a Lidar used if available and RNGFND_LANDING=1. Otherwise it comes from terrain data if TERRAIN_FOLLOW=1 and comes from height above home otherwise.
@@ -476,7 +475,7 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Units: m/s
     // @Range: 0 50
     // @User: Standard
-    AP_GROUPINFO("TAILSIT_SPDMIN", 17, QuadPlane, tailsitter.scaling_speed_min, 10),
+    AP_GROUPINFO("TAILSIT_SPDMIN", 16, QuadPlane, tailsitter.scaling_speed_min, 10),
 
     // @Param: TAILSIT_SPDMAX
     // @DisplayName: Tailsitter maximum airspeed scaling
@@ -484,21 +483,21 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Units: m/s
     // @Range: 0 50
     // @User: Standard
-    AP_GROUPINFO("TAILSIT_SPDMAX", 18, QuadPlane, tailsitter.scaling_speed_max, 20),
+    AP_GROUPINFO("TAILSIT_SPDMAX", 17, QuadPlane, tailsitter.scaling_speed_max, 20),
 
     // @Param: TAILSIT_GSCMSK
     // @DisplayName: Tailsitter gain scaling mask
     // @Description: Bitmask of gain scaling methods to be applied: BOOST: boost gain at low throttle, ATT_THR: reduce gain at high throttle/tilt, INTERP: interpolate between fixed-wing and copter controls
     // @User: Standard
     // @Bitmask: 1:BOOST,2:ATT_THR,4:INTERP
-    AP_GROUPINFO("TAILSIT_GSCMSK", 19, QuadPlane, tailsitter.gain_scaling_mask, 0),
+    AP_GROUPINFO("TAILSIT_GSCMSK", 18, QuadPlane, tailsitter.gain_scaling_mask, TAILSITTER_GSCL_BOOST),
 
     // @Param: TAILSIT_GSCMIN
     // @DisplayName: Minimum gain scaling based on throttle and attitude
     // @Description: Minimum gain scaling at high throttle/tilt angle
     // @Range: 0.1 1
     // @User: Standard
-    AP_GROUPINFO("TAILSIT_GSCMIN", 20, QuadPlane, tailsitter.gain_scaling_min, 0.4),
+    AP_GROUPINFO("TAILSIT_GSCMIN", 19, QuadPlane, tailsitter.gain_scaling_min, 0.4),
 
     AP_GROUPEND
 };
@@ -841,21 +840,41 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
     check_attitude_relax();
 
     // tailsitter-only bodyframe roll control options
+    // Angle mode attitude control for pitch and body-frame roll, rate control for euler yaw.
     if (is_tailsitter()) {
+        const float euler_pitch = plane.nav_pitch_cd * .01f;
+
+        int16_t roll_limit = MIN(plane.roll_limit_cd, plane.quadplane.aparm.angle_max);
+        // separate limit for tailsitter roll, if set
+        if (plane.quadplane.tailsitter.max_roll_angle > 0) {
+            roll_limit = plane.quadplane.tailsitter.max_roll_angle * 100.0f;
+        }
+        float roll_rate_limit_cds = plane.quadplane.yaw_rate_max * 100.0f;
+
+        float bf_yaw_cds = constrain_float(plane.nav_roll_cd, -roll_rate_limit_cds, roll_rate_limit_cds);
+        float bf_roll_cd = constrain_float(yaw_rate_cds, -roll_limit, roll_limit);
         if (tailsitter.input_type == TAILSITTER_INPUT_BF_ROLL_M) {
-            // Angle mode attitude control for pitch and body-frame roll, rate control for yaw.
-            // this version interprets the first argument as yaw rate and the third as roll angle
-            // because it is intended to be used with Q_TAILSIT_INPUT=1 where the roll and yaw sticks
-            // act in the tailsitter's body frame (i.e. roll is MC/earth frame yaw and
-            // yaw is MC/earth frame roll)
-            attitude_control->input_euler_rate_yaw_euler_angle_pitch_bf_roll_m(plane.nav_roll_cd,
+            // If pitch is  small (nose vertical) use roll rate limit for MC yaw rate and roll limit for MC roll angle
+            if (fabsf(euler_pitch) < 30.0f) {
+                float yaw_input_scale = roll_rate_limit_cds / roll_limit;
+                bf_yaw_cds = constrain_float(yaw_input_scale * plane.nav_roll_cd, -roll_rate_limit_cds, roll_rate_limit_cds);
+                bf_roll_cd = constrain_float(yaw_rate_cds, -roll_limit, roll_limit);
+            }
+            // multicopter style: rudder stick controls bodyframe roll when hovering
+            attitude_control->input_euler_rate_yaw_euler_angle_pitch_bf_roll_m(bf_yaw_cds,
                                                                                plane.nav_pitch_cd,
-                                                                               yaw_rate_cds);
+                                                                               bf_roll_cd);
             return;
         } else if (tailsitter.input_type == TAILSITTER_INPUT_BF_ROLL_P) {
-            attitude_control->input_euler_rate_yaw_euler_angle_pitch_bf_roll_p(plane.nav_roll_cd,
+            // If pitch is  small (nose vertical) use roll rate limit for roll rate and roll limit for bf yaw angle
+            if (fabsf(euler_pitch) < 30.0f) {
+                bf_yaw_cds = constrain_float(plane.nav_roll_cd, -roll_limit, roll_limit);
+                bf_roll_cd = constrain_float(yaw_rate_cds, -roll_rate_limit_cds, roll_rate_limit_cds);
+            }
+            // plane style: rudder stick controls bodyframe yaw when hovering
+            attitude_control->input_euler_rate_yaw_euler_angle_pitch_bf_roll_p(bf_yaw_cds,
                                                                                plane.nav_pitch_cd,
-                                                                               yaw_rate_cds);
+                                                                               bf_roll_cd);
             return;
         }
     }
@@ -1053,9 +1072,8 @@ void QuadPlane::control_qacro(void)
         float target_yaw = 0;
         if (is_tailsitter()) {
             // Note that the 90 degree Y rotation for copter mode swaps body-frame roll and yaw
-            // acro_roll_rate param applies to yaw in copter frame
-            target_roll =  plane.channel_rudder->norm_input() * acro_roll_rate * 100.0f;
-            target_yaw  = -plane.channel_roll->norm_input() * acro_yaw_rate * 100.0f;
+            target_roll =  plane.channel_rudder->norm_input() * acro_yaw_rate * 100.0f;
+            target_yaw  = -plane.channel_roll->norm_input() * acro_roll_rate * 100.0f;
         } else {
             target_roll = plane.channel_roll->norm_input() * acro_roll_rate * 100.0f;
             target_yaw  = plane.channel_rudder->norm_input() * acro_yaw_rate * 100.0;
@@ -1416,7 +1434,6 @@ bool QuadPlane::assistance_needed(float aspeed)
         angle_error_start_ms = 0;
         return false;
     }
-
     if (aspeed < assist_speed) {
         // assistance due to Q_ASSIST_SPEED
         in_angle_assist = false;
@@ -1448,7 +1465,6 @@ bool QuadPlane::assistance_needed(float aspeed)
             alt_error_start_ms = 0;
         }
     }
-
     if (assist_angle <= 0) {
         in_angle_assist = false;
         angle_error_start_ms = 0;
@@ -1477,7 +1493,6 @@ bool QuadPlane::assistance_needed(float aspeed)
         in_angle_assist = false;
         return false;
     }
-
     if (angle_error_start_ms == 0) {
         angle_error_start_ms = now;
     }
