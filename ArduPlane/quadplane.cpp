@@ -443,7 +443,6 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Increment: 1
     // @User: Standard
     AP_GROUPINFO("ACRO_YAW_RATE", 13, QuadPlane, acro_yaw_rate, 90),
-
     // @Param: TKOFF_FAIL_SCL
     // @DisplayName: Takeoff time failure scalar
     // @Description: Scalar for how long past the expected takeoff time a takeoff should be considered as failed and the vehicle will switch to QLAND. If set to 0 there is no limit on takeoff time.
@@ -460,6 +459,20 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("TKOFF_ARSP_LIM", 15, QuadPlane, maximum_takeoff_airspeed, 0),
+
+    // @Param: FWD_THR_CH
+    // @DisplayName: VTOL forward throttle channel
+    // @Description: RC channel for manual control of VTOL forward throttle.
+    // @Range 0 16
+    // @RebootRequired: True
+    AP_GROUPINFO("FWD_THR_CH", 16, QuadPlane, fwd_thr_chan, 0),
+
+    // @Param: FWD_THR_MAX
+    // @DisplayName: VTOL forward throttle max
+    // @Description: Maximum value for forward throttle.
+    // @Range 0 1
+    // @RebootRequired: False
+    AP_GROUPINFO("FWD_THR_MAX", 17, QuadPlane, fwd_thr_max, 0),
 
     AP_GROUPEND
 };
@@ -489,7 +502,7 @@ static const struct AP_Param::defaults_table_struct defaults_table_tailsitter[] 
     { "KFF_RDDRMIX",       0.02 },
     { "Q_A_RAT_PIT_FF",    0.2 },
     { "Q_A_RAT_YAW_FF",    0.2 },
-    { "Q_A_RAT_YAW_I",     0.18 },
+    { "Q_A_RAT_YAW_I",    0.18 },
     { "Q_A_ANGLE_BOOST",   0 },
     { "LIM_PITCH_MAX",    3000 },
     { "LIM_PITCH_MIN",    -3000 },
@@ -626,6 +639,10 @@ bool QuadPlane::setup(void)
         frame_class.set(AP_Motors::MOTOR_FRAME_QUAD);
         setup_default_channels(4);
         break;
+    }
+
+    if (fwd_thr_chan > 0) {
+        rc_fwd_thr_ch = RC_Channels::rc_channel(fwd_thr_chan-1);
     }
 
     if (tailsitter.motor_mask == 0) {
@@ -2104,6 +2121,7 @@ void QuadPlane::vtol_position_controller(void)
     case QPOS_POSITION1: {
         const Vector2f diff_wp = plane.current_loc.get_distance_NE(loc);
         const float distance = diff_wp.length();
+
         Vector2f groundspeed = ahrs.groundspeed_vector();
         float speed_towards_target = distance>1?(diff_wp.normalized() * groundspeed):0;
         if (poscontrol.speed_scale <= 0) {
@@ -2489,7 +2507,6 @@ bool QuadPlane::do_vtol_takeoff(const AP_Mission::Mission_Command& cmd)
     
     // also update nav_controller for status output
     plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
-
     // calculate the time required to complete a takeoff
     // this may be conservative and accept extra time due to clamping
     // derived from the following latex equations if you want a nicely formatted view
@@ -2511,7 +2528,6 @@ bool QuadPlane::do_vtol_takeoff(const AP_Mission::Mission_Command& cmd)
     // setup the takeoff failure handling code
     takeoff_start_time_ms = millis();
     takeoff_time_limit_ms = MAX(travel_time * takeoff_failure_scalar * 1000, 5000); // minimum time 5 seconds
-
     return true;
 }
 
@@ -2556,7 +2572,6 @@ bool QuadPlane::verify_vtol_takeoff(const AP_Mission::Mission_Command &cmd)
     if (!available()) {
         return true;
     }
-
     const uint32_t now = millis();
 
     // reset takeoff start time if we aren't armed, as we won't have made any progress
@@ -2576,7 +2591,6 @@ bool QuadPlane::verify_vtol_takeoff(const AP_Mission::Mission_Command &cmd)
         plane.set_mode(plane.mode_qland, MODE_REASON_VTOL_FAILED_TAKEOFF);
         return false;
     }
-
     if (plane.current_loc.alt < plane.next_WP_loc.alt) {
         return false;
     }
@@ -2738,22 +2752,41 @@ void QuadPlane::Log_Write_QControl_Tuning()
  */
 int8_t QuadPlane::forward_throttle_pct(void)
 {
-    /*
-      in non-VTOL modes or modes without a velocity controller. We
-      don't use it in QHOVER or QSTABILIZE as they are the primary
-      recovery modes for a quadplane and need to be as simple as
-      possible. They will drift with the wind
-    */
+    // disable forward motor if disarmed, spooled down or not in a VTOL mode
     if (!in_vtol_mode() ||
         !motors->armed() ||
-        vel_forward.gain <= 0 ||
-        plane.control_mode == &plane.mode_qstabilize ||
-        plane.control_mode == &plane.mode_qhover ||
-        plane.control_mode == &plane.mode_qautotune ||
         motors->get_desired_spool_state() < AP_Motors::DesiredSpoolState::GROUND_IDLE) {
         return 0;
     }
+    /*
+      Unless an RC channel is assigned for manual forward throttle control,
+      we don't use forward throttle in QHOVER or QSTABILIZE as they are the primary
+      recovery modes for a quadplane and need to be as simple as
+      possible. They will drift with the wind.
+    */
+    if (plane.control_mode == &plane.mode_qacro ||
+        plane.control_mode == &plane.mode_qstabilize ||
+        plane.control_mode == &plane.mode_qhover) {
 
+        if (rc_fwd_thr_ch == nullptr) {
+            return 0;
+        } else {
+            float fwd_thr = constrain_float(fwd_thr_max, 0, 1) * (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
+            return 100.0f * fwd_thr;
+        }
+    }
+
+    /*
+      in qautotune mode or modes without a velocity controller
+    */
+    if (vel_forward.gain <= 0 ||
+        plane.control_mode == &plane.mode_qautotune) {
+        return 0;
+    }
+
+    /*
+      in modes with a velocity controller
+    */
     float deltat = (AP_HAL::millis() - vel_forward.last_ms) * 0.001f;
     if (deltat > 1 || deltat < 0) {
         vel_forward.integrator = 0;
@@ -2774,10 +2807,10 @@ int8_t QuadPlane::forward_throttle_pct(void)
         vel_forward.integrator = 0;
         return 0;
     }
+    // get component of velocity error in fwd body frame direction
     Vector3f vel_error_body = ahrs.get_rotation_body_to_ned().transposed() * ((desired_velocity_cms*0.01f) - vel_ned);
 
-    // find component of velocity error in fwd body frame direction
-    float fwd_vel_error = vel_error_body * Vector3f(1,0,0);
+    float fwd_vel_error = vel_error_body.x;
 
     // scale forward velocity error by maximum airspeed
     fwd_vel_error /= MAX(plane.aparm.airspeed_max, 5);

@@ -315,6 +315,11 @@ private:
     // manual throttle curve expo strength
     AP_Float throttle_expo;
 
+    // manual forward throttl input
+    AP_Int8  fwd_thr_chan;
+    AP_Float fwd_thr_max;
+    RC_Channel *rc_fwd_thr_ch;
+
     // QACRO mode max roll/pitch/yaw rates
     AP_Float acro_roll_rate;
     AP_Float acro_pitch_rate;
