@@ -91,69 +91,55 @@ void QuadPlane::tiltrotor_continuous_update(void)
                                             tilt.current_throttle-max_change,
                                             tilt.current_throttle+max_change);
 
-    bool enable_tilt_bias = false;
-    RC_Channel *bias_ch;
-    if (tilt.bias_chan > 0) {
-        bias_ch = RC_Channels::rc_channel(tilt.bias_chan-1);
-        enable_tilt_bias = (bias_ch != nullptr);
-    }
-
     /*
       we are in a VTOL mode. We need to work out how much tilt is
-      needed. There are 3 strategies we will use:
+      needed. There are 4 strategies we will use:
 
-      1a) In QHOVER, and QAUTOTUNE modes the angle will be set to zero.
+      1a) In QAUTOTUNE mode the angle will be set to zero.
+      1b) In QHOVER, QSTABILIZE and QACRO modes with rc_bias_ch null, the angle will be set to zero.
             This enables these modes to be used as a safe recovery mode.
 
-      1b) In QACRO and QSTABILIZE modes with enable_tilt_bias false, the angle will be set to zero.
-            This enables these modes to be used as a safe recovery mode.
+      2) In QHOVER, QSTABILIZE and QACRO modes with rc_bias_ch assigned to a valid RC channel:
+           The tilt angle is determined by RC input.
 
-      2a) In QACRO and QSTABILIZE modes with enable_tilt_bias true:
-            The tilt angle is determined by RC input.
-
-      2b) In fixed wing assisted flight or velocity controlled modes we
+      3) In fixed wing assisted flight or velocity controlled modes we
          will set the angle based on the demanded forward throttle,
          with a maximum tilt given by Q_TILT_MAX. This relies on
          Q_VFWD_GAIN being set.
-
-      3) if we are in TRANSITION_TIMER mode then we are transitioning
+      4) if we are in TRANSITION_TIMER mode then we are transitioning
          to forward flight and should put the rotors all the way forward
     */
 
-    if (plane.control_mode == &plane.mode_qhover ||
-        plane.control_mode == &plane.mode_qautotune) {
+    if (plane.control_mode == &plane.mode_qautotune) {
         // case 1a
         tiltrotor_slew(0);
         return;
     }
-    if (!enable_tilt_bias &&
-        (plane.control_mode == &plane.mode_qstabilize || plane.control_mode == &plane.mode_qacro)) {
-        // case 1b
-        tiltrotor_slew(0);
+    if (plane.control_mode == &plane.mode_qhover ||
+        plane.control_mode == &plane.mode_qstabilize ||
+        plane.control_mode == &plane.mode_qacro) {
+        if (tilt.rc_bias_ch == nullptr) {
+            // case 1b
+            tiltrotor_slew(0);
+        } else {
+            // case 2) manual control of motor tilt
+            // TODO: if tilt is > 50% use differential thrust for yaw control
+            tiltrotor_slew(constrain_float((1.0f + tilt.rc_bias_ch->norm_input()) / 2, 0, 1));
+        }
         return;
     }
 
     if (assisted_flight &&
         transition_state >= TRANSITION_TIMER) {
-        // case 3) we are transitioning to fixed wing - tilt the motors all
+        // case 3b) we are transitioning to fixed wing - tilt the motors all
         // the way forward
         tiltrotor_slew(1);
     } else {
-        float settilt = 0;
-        if (enable_tilt_bias) {
-            // case 2a) manual control of motor tilt
-            // TODO: if tilt is > 50% use differential thrust for yaw control
-            settilt = constrain_float((1.0f + bias_ch->norm_input()) / 2, 0, 1);
-        } else {
-            // case 2b)
-            // until we have completed the transition we limit the tilt to
-            // Q_TILT_MAX. Anything above 50% throttle gets
-            // Q_TILT_MAX. Below 50% throttle we decrease linearly. This
-            // relies heavily on Q_VFWD_GAIN being set appropriately.
-            settilt = constrain_float(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) / 50.0f, 0, 1);
-            settilt *= tilt.max_angle_deg / 90.0f;
-        }
-        tiltrotor_slew(settilt);
+        // case 3a) fixed wing assisted flight or velocity controlled modes
+        // set the angle based on the demanded forward throttle,
+        // with a maximum tilt given by Q_TILT_MAX
+        float settilt = constrain_float(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) / 50.0f, 0, 1);
+        tiltrotor_slew(settilt * tilt.max_angle_deg / 90.0f);
     }
 }
 

@@ -705,6 +705,10 @@ bool QuadPlane::setup(void)
             SRV_Channels::set_range(SRV_Channel::k_tiltMotorLeft,  1000);
             SRV_Channels::set_range(SRV_Channel::k_tiltMotorRight, 1000);
         }
+
+        if (tilt.bias_chan > 0) {
+            tilt.rc_bias_ch = RC_Channels::rc_channel(tilt.bias_chan-1);
+        }
     }
 
     
