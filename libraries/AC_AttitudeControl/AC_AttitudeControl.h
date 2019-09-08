@@ -230,6 +230,11 @@ public:
 
     // Set output throttle
     virtual void set_throttle_out(float throttle_in, bool apply_angle_boost, float filt_cutoff) = 0;
+    
+    // Disable angle boost
+    void disable_angle_boost() {
+        _angle_boost_enabled = 0;
+    }
 
     // get throttle passed into attitude controller (i.e. throttle_in provided to set_throttle_out)
     float get_throttle_in() const { return _throttle_in; }
