@@ -472,7 +472,8 @@ static const struct AP_Param::defaults_table_struct defaults_table_tailsitter[] 
     { "KFF_RDDRMIX",       0.02 },
     { "Q_A_RAT_PIT_FF",    0.2 },
     { "Q_A_RAT_YAW_FF",    0.2 },
-    { "Q_A_RAT_YAW_I",    0.18 },
+    { "Q_A_RAT_YAW_I",     0.18 },
+    { "Q_A_ANGLE_BOOST",   0 },
     { "LIM_PITCH_MAX",    3000 },
     { "LIM_PITCH_MIN",    -3000 },
     { "MIXING_GAIN",      1.0 },
@@ -1648,6 +1649,11 @@ void QuadPlane::update(void)
 
     if (SRV_Channels::get_emergency_stop()) {
         attitude_control->reset_rate_controller_I_terms();
+    }
+
+    if (is_tailsitter()) {
+        // make sure angle boost is disabled
+        attitude_control->disable_angle_boost();
     }
 
     if (!hal.util->get_soft_armed()) {
