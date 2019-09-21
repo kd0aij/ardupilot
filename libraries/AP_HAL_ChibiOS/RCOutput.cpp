@@ -208,9 +208,10 @@ void RCOutput::set_freq(uint32_t chmask, uint16_t freq_hz)
             group.rc_frequency = group_freq;
             set_freq_group(group);
             update_mask |= group.ch_mask;
-        }
-        if (group_freq > 50) {
-            fast_channel_mask |= group.ch_mask;
+            // disallow changing frequency of this group if it is greater than the default
+            if (group_freq > 50) {
+                fast_channel_mask |= group.ch_mask;
+            }
         }
     }
 }
