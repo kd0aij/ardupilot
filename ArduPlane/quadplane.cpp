@@ -1431,20 +1431,20 @@ bool QuadPlane::assistance_needed(float aspeed)
  */
 void QuadPlane::update_transition(void)
 {
-    if (plane.control_mode == &plane.mode_manual ||
-        plane.control_mode == &plane.mode_acro ||
-        plane.control_mode == &plane.mode_training) {
-        // in manual modes quad motors are always off
-        if (!tilt.motors_active && !is_tailsitter()) {
-            motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
-            motors->output();
-        }
-        transition_state = TRANSITION_DONE;
-        transition_start_ms = 0;
-        transition_low_airspeed_ms = 0;
-        assisted_flight = false;
-        return;
-    }
+//    if (plane.control_mode == &plane.mode_manual ||
+//        plane.control_mode == &plane.mode_acro ||
+//        plane.control_mode == &plane.mode_training) {
+//        // in manual modes quad motors are always off
+//        if (!tilt.motors_active && !is_tailsitter()) {
+//            motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
+//            motors->output();
+//        }
+//        transition_state = TRANSITION_DONE;
+//        transition_start_ms = 0;
+//        transition_low_airspeed_ms = 0;
+//        assisted_flight = false;
+//        return;
+//    }
 
     const uint32_t now = millis();
 
