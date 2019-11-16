@@ -1932,6 +1932,14 @@ void QuadPlane::motors_output(bool run_rate_controller)
     if (run_rate_controller) {
         attitude_control->rate_controller_run();
     }
+    // delay motor start after arming
+    constexpr uint32_t ARMING_DELAY_MS = 2000;
+    if (hal.util->get_soft_armed() &&
+        (AP_HAL::millis() - hal.util->get_last_armed_change() < ARMING_DELAY_MS)) {
+        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
+        motors->output();
+        return;
+    }
 
 #if ADVANCED_FAILSAFE == ENABLED
     if (!hal.util->get_soft_armed() ||
