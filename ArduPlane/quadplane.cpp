@@ -477,6 +477,13 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @RebootRequired: False
     AP_GROUPINFO("FWD_THR_MAX", 17, QuadPlane, fwd_thr_max, 0),
 
+    // @Param: FWD_THR_MIX
+    // @DisplayName: Throttle to VTOL forward throttle mix
+    // @Description: Amount of forward throttle applied when above hover throttle.
+    // @Range 0 1
+    // @RebootRequired: False
+    AP_GROUPINFO("FWD_THR_MIX", 18, QuadPlane, fwd_thr_mix, 0),
+
     AP_GROUPEND
 };
 
@@ -2817,7 +2824,15 @@ int8_t QuadPlane::forward_throttle_pct(bool tiltrotor)
         if (rc_fwd_thr_ch == nullptr) {
             return 0;
         } else {
-            float fwd_thr = constrain_float(fwd_thr_max, 0, 1) * (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
+            // calculate fwd throttle demand from manual input
+            float fwd_thr = (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
+
+            // calculate mix proportional to throttle above hover
+            // ***setting throttle_expo to zero will break this***
+            float tmix = fwd_thr_mix * constrain_float(2 * (get_pilot_throttle() - 0.5f), 0, 1);
+
+            // set forward throttle to fwd_thr_max * (manual input + mix)
+            fwd_thr = constrain_float(fwd_thr_max, 0, 1) * constrain_float(fwd_thr + tmix, 0, 1);
             return 100.0f * fwd_thr;
         }
     }
