@@ -116,15 +116,17 @@ void QuadPlane::tiltrotor_continuous_update(void)
         return;
     }
 
-    // if not transitioning to fixed wing and in QACRO, QSTABILIZE or QHOVER mode
-    if (!assisted_flight &&
-        (plane.control_mode == &plane.mode_qacro ||
-         plane.control_mode == &plane.mode_qstabilize ||
-         plane.control_mode == &plane.mode_qhover)) {
-        if (rc_fwd_thr_ch == nullptr) {
+    // if not transitioning to fixed wing
+    if (!assisted_flight) {
+        // and in QACRO, QSTABILIZE or QHOVER mode
+        if (plane.control_mode == &plane.mode_qacro ||
+            plane.control_mode == &plane.mode_qstabilize ||
+            plane.control_mode == &plane.mode_qhover) {
             // case 1b
             tiltrotor_slew(0);
-        } else {
+        }
+        // or in QTILT mode
+        if (plane.control_mode == &plane.mode_qtilt) {
             // case 2) manual control of forward throttle
             float settilt = .01f * forward_throttle_pct(true);
             tiltrotor_slew(settilt);

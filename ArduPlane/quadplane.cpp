@@ -470,19 +470,12 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @User: Standard
     AP_GROUPINFO("ASSIST_ALT", 16, QuadPlane, assist_alt, 0),
 
-    // @Param: FWD_THR_MAX
-    // @DisplayName: VTOL forward throttle max
-    // @Description: Maximum value for forward throttle.
-    // @Range 0 1
-    // @RebootRequired: False
-    AP_GROUPINFO("FWD_THR_MAX", 17, QuadPlane, fwd_thr_max, 0),
-
     // @Param: FWD_THR_MIX
     // @DisplayName: Throttle to VTOL forward throttle mix
     // @Description: Amount of forward throttle applied when above hover throttle.
     // @Range 0 1
     // @RebootRequired: False
-    AP_GROUPINFO("FWD_THR_MIX", 18, QuadPlane, fwd_thr_mix, 0),
+    AP_GROUPINFO("FWD_THR_MIX", 18, QuadPlane, fwd_thr_mix, 0.5),
 
     AP_GROUPEND
 };
@@ -1164,6 +1157,9 @@ bool QuadPlane::is_flying_vtol(void) const
         return true;
     }
     if (plane.control_mode == &plane.mode_qacro) {
+        return true;
+    }
+    if (plane.control_mode == &plane.mode_qtilt) {
         return true;
     }
     if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
@@ -1973,6 +1969,7 @@ void QuadPlane::control_run(void)
 
     switch (plane.control_mode->mode_number()) {
     case Mode::Number::QACRO:
+    case Mode::Number::QTILT:
         control_qacro();
         break;
     case Mode::Number::QSTABILIZE:
@@ -1999,7 +1996,8 @@ void QuadPlane::control_run(void)
 
     // we also stabilize using fixed wing surfaces
     float speed_scaler = plane.get_speed_scaler();
-    if (plane.control_mode->mode_number() == Mode::Number::QACRO) {
+    if (plane.control_mode->mode_number() == Mode::Number::QACRO ||
+        plane.control_mode->mode_number() == Mode::Number::QTILT) {
         plane.stabilize_acro(speed_scaler);
     } else {
         plane.stabilize_roll(speed_scaler);
@@ -2046,6 +2044,7 @@ bool QuadPlane::init_mode(void)
         return qautotune.init();
 #endif
     case Mode::Number::QACRO:
+    case Mode::Number::QTILT:
         init_qacro();
         break;
     default:
@@ -2138,6 +2137,7 @@ bool QuadPlane::in_vtol_mode(void) const
             plane.control_mode == &plane.mode_qland ||
             plane.control_mode == &plane.mode_qrtl ||
             plane.control_mode == &plane.mode_qacro ||
+            plane.control_mode == &plane.mode_qtilt ||
             plane.control_mode == &plane.mode_qautotune ||
             ((plane.control_mode == &plane.mode_guided || plane.control_mode == &plane.mode_avoidADSB) && plane.auto_state.vtol_loiter) ||
             in_vtol_auto());
@@ -2812,29 +2812,27 @@ int8_t QuadPlane::forward_throttle_pct(bool tiltrotor)
         }
     }
     /*
-      Unless an RC channel is assigned for manual forward throttle control,
-      we don't use forward throttle in QHOVER or QSTABILIZE as they are the primary
-      recovery modes for a quadplane and need to be as simple as
-      possible. They will drift with the wind.
+      In QTILT mode, mix throttle to fwd throttle.
     */
-    if (plane.control_mode == &plane.mode_qacro ||
-        plane.control_mode == &plane.mode_qstabilize ||
-        plane.control_mode == &plane.mode_qhover) {
+    if (plane.control_mode == &plane.mode_qtilt) {
 
-        if (rc_fwd_thr_ch == nullptr) {
-            return 0;
-        } else {
-            // calculate fwd throttle demand from manual input
-            float fwd_thr = (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
-
-            // calculate mix proportional to throttle above hover
-            // ***setting throttle_expo to zero will break this***
-            float tmix = fwd_thr_mix * constrain_float(2 * (get_pilot_throttle() - 0.5f), 0, 1);
-
-            // set forward throttle to fwd_thr_max * (manual input + mix)
-            fwd_thr = constrain_float(fwd_thr_max, 0, 1) * constrain_float(fwd_thr + tmix, 0, 1);
-            return 100.0f * fwd_thr;
+        float thr_max = 0;
+        float fwd_thr = 0;
+        if (rc_fwd_thr_ch != nullptr) {
+            // set throttle max from rc_fwd_thr_ch
+            thr_max = (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
         }
+
+        if (!is_zero(fwd_thr_mix)) {
+            // calculate mix proportional to throttle above hover
+            // *** this breaks if throtle_expo is zero ***
+            float thr = constrain_float(plane.channel_throttle->norm_input(), 0, 1);
+            float tmix = constrain_float(fwd_thr_mix, 0, 1) * thr;
+
+            // set forward throttle to thr_max * mix
+            fwd_thr = constrain_float(thr_max, 0, 1) * tmix;
+        }
+        return 100.0f * fwd_thr;
     }
 
     /*

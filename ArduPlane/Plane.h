@@ -154,6 +154,7 @@ public:
     friend class ModeQLand;
     friend class ModeQRTL;
     friend class ModeQAcro;
+    friend class ModeQTilt;
     friend class ModeQAutotune;
     friend class ModeTakeoff;
 
@@ -288,6 +289,7 @@ private:
     ModeQLand mode_qland;
     ModeQRTL mode_qrtl;
     ModeQAcro mode_qacro;
+    ModeQTilt mode_qtilt;
     ModeQAutotune mode_qautotune;
     ModeTakeoff mode_takeoff;
 

@@ -36,6 +36,7 @@ public:
     friend class ModeQStabilize;
     friend class ModeQAutotune;
     friend class ModeQAcro;
+    friend class ModeQTilt;
     
     QuadPlane(AP_AHRS_NavEKF &_ahrs);
 
@@ -320,9 +321,8 @@ private:
     // manual throttle curve expo strength
     AP_Float throttle_expo;
 
-    // manual forward throttle input
+    // QTILT mode forward throttle controls
     AP_Int8  fwd_thr_chan;
-    AP_Float fwd_thr_max;
     AP_Float fwd_thr_mix;
     RC_Channel *rc_fwd_thr_ch;
 
