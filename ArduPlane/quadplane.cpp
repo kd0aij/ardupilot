@@ -1969,8 +1969,11 @@ void QuadPlane::control_run(void)
 
     switch (plane.control_mode->mode_number()) {
     case Mode::Number::QACRO:
-    case Mode::Number::QTILT:
         control_qacro();
+        break;
+    case Mode::Number::QTILT:
+        control_stabilize();
+//        control_qacro();
         break;
     case Mode::Number::QSTABILIZE:
         control_stabilize();
@@ -1996,8 +1999,8 @@ void QuadPlane::control_run(void)
 
     // we also stabilize using fixed wing surfaces
     float speed_scaler = plane.get_speed_scaler();
-    if (plane.control_mode->mode_number() == Mode::Number::QACRO ||
-        plane.control_mode->mode_number() == Mode::Number::QTILT) {
+    if (plane.control_mode->mode_number() == Mode::Number::QACRO) {
+//        || plane.control_mode->mode_number() == Mode::Number::QTILT) {
         plane.stabilize_acro(speed_scaler);
     } else {
         plane.stabilize_roll(speed_scaler);
