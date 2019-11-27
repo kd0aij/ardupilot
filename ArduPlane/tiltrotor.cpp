@@ -358,7 +358,7 @@ void QuadPlane::tiltrotor_vectored_yaw(void)
     // Wait TILT_DELAY_MS after disarming to allow props to spin down first.
     constexpr uint32_t TILT_DELAY_MS = 3000;
     uint32_t now = AP_HAL::millis();
-    if (!hal.util->get_soft_armed()) {
+    if (!hal.util->get_soft_armed() && (plane.quadplane.options & OPTION_DISARMED_TILT)) {
         if ((now - hal.util->get_last_armed_change()) > TILT_DELAY_MS) {
             float yaw_out = plane.channel_rudder->get_control_in();
             yaw_out /= plane.channel_rudder->get_range();

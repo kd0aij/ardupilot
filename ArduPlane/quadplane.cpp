@@ -328,8 +328,8 @@ const AP_Param::GroupInfo QuadPlane::var_info[] = {
 
     // @Param: OPTIONS
     // @DisplayName: quadplane options
-    // @Description: This provides a set of additional control options for quadplanes. LevelTransition means that the wings should be held level to within LEVEL_ROLL_LIMIT degrees during transition to fixed wing flight, and the vehicle will not use the vertical lift motors to climb during the transition. If AllowFWTakeoff bit is not set then fixed wing takeoff on quadplanes will instead perform a VTOL takeoff. If AllowFWLand bit is not set then fixed wing land on quadplanes will instead perform a VTOL land. If respect takeoff frame is not set the vehicle will interpret all takeoff waypoints as an altitude above the corrent position. When Use QRTL is set it will replace QLAND with QRTL for failsafe actions when in VTOL modes.
-    // @Bitmask: 0:LevelTransition,1:AllowFWTakeoff,2:AllowFWLand,3:Respect takeoff frame types,4:Use a fixed wing approach for VTOL landings,5:Use QRTL instead of QLAND for failsafe when in VTOL modes,6:Use idle governor in MANUAL
+    // @Description: This provides a set of additional control options for quadplanes. LevelTransition means that the wings should be held level to within LEVEL_ROLL_LIMIT degrees during transition to fixed wing flight, and the vehicle will not use the vertical lift motors to climb during the transition. If AllowFWTakeoff bit is not set then fixed wing takeoff on quadplanes will instead perform a VTOL takeoff. If AllowFWLand bit is not set then fixed wing land on quadplanes will instead perform a VTOL land. If respect takeoff frame is not set the vehicle will interpret all takeoff waypoints as an altitude above the current position. When Use QRTL is set it will replace QLAND with QRTL for failsafe actions when in VTOL modes.
+    // @Bitmask: 0:LevelTransition,1:AllowFWTakeoff,2:AllowFWLand,3:Respect takeoff frame types,4:Use a fixed wing approach for VTOL landings,5:Use QRTL instead of QLAND for failsafe when in VTOL modes,6:Use idle governor in MANUAL,7:Enable motor tilt when disarmed,8:Delay spoolup for 2 seconds after arming
     AP_GROUPINFO("OPTIONS", 58, QuadPlane, options, 0),
 
     AP_SUBGROUPEXTENSION("",59, QuadPlane, var_info2),
@@ -1932,13 +1932,16 @@ void QuadPlane::motors_output(bool run_rate_controller)
     if (run_rate_controller) {
         attitude_control->rate_controller_run();
     }
-    // delay motor start after arming
-    constexpr uint32_t ARMING_DELAY_MS = 2000;
-    if (hal.util->get_soft_armed() &&
-        (AP_HAL::millis() - hal.util->get_last_armed_change() < ARMING_DELAY_MS)) {
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
-        motors->output();
-        return;
+
+    if (options & OPTION_DISARMED_TILT || options & OPTION_DELAY_ARMING) {
+        // delay motor start after arming
+        constexpr uint32_t ARMING_DELAY_MS = 2000;
+        if (hal.util->get_soft_armed() &&
+            (AP_HAL::millis() - hal.util->get_last_armed_change() < ARMING_DELAY_MS)) {
+            motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
+            motors->output();
+            return;
+        }
     }
 
 #if ADVANCED_FAILSAFE == ENABLED
