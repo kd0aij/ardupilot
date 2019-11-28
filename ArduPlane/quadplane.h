@@ -477,7 +477,7 @@ private:
         AP_Int16 motor_mask;
         AP_Float scaling_speed_min;
         AP_Float scaling_speed_max;
-        AP_Int8 gain_scaling_mask;
+        AP_Int16 gain_scaling_mask;
     } tailsitter;
 
     // tailsitter speed scaler
