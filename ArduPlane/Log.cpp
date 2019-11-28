@@ -26,6 +26,7 @@ void Plane::Log_Write_Attitude(void)
         quadplane.attitude_control->get_attitude_target_quat().to_euler(targets.x, targets.y, targets.z);
         targets *= degrees(100.0f);
         logger.Write_AttitudeView(*quadplane.ahrs_view, targets);
+        plane.Log_Write_SpdScaler();
     } else {
         logger.Write_Attitude(targets);
     }
@@ -245,6 +246,23 @@ void Plane::Log_Write_RC(void)
     Log_Write_AETR();
 }
 
+struct PACKED log_SPSC {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float scale;
+};
+
+void Plane::Log_Write_SpdScaler(void)
+{
+    struct log_SPSC pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_SPSC_MSG)
+        ,time_us  : AP_HAL::micros64()
+        ,scale    : plane.quadplane.last_spd_scaler
+    };
+
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -276,6 +294,8 @@ const struct LogStructure Plane::log_structure[] = {
       "PIQA", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS }, \
     { LOG_AETR_MSG, sizeof(log_AETR), \
       "AETR", "Qhhhhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap", "s-----", "F-----" },  \
+    { LOG_SPSC_MSG, sizeof(log_SPSC),
+      "SPSC", "Qf", "TimeUS,Scale", "sd", "F0" },
 };
 
 void Plane::Log_Write_Vehicle_Startup_Messages()
