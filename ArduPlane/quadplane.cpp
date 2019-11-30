@@ -842,11 +842,8 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
             roll_limit = plane.quadplane.tailsitter.max_roll_angle * 100.0f;
         }
 
-        // Constrain the roll angle limit set by parameters
-        roll_limit = constrain_int16(roll_limit, -9000, 9000);
-
-        // Guard against a bad parameter value
-        float yaw_rate_limit = constrain_float(plane.quadplane.yaw_rate_max, 20, 500) * 100.0f;
+        // Prevent a divide by zero
+        float yaw_rate_limit = ((yaw_rate_max < 1.0f) ? 1 : yaw_rate_max) * 100.0f;
         float yaw2roll_scale = roll_limit / yaw_rate_limit;
 
         if (tailsitter.input_type == TAILSITTER_INPUT_BF_ROLL_M) {
@@ -1315,7 +1312,14 @@ float QuadPlane::get_pilot_input_yaw_rate_cds(void) const
     }
 
     // add in rudder input
-    return plane.channel_rudder->get_control_in() * yaw_rate_max / 45;
+    float max_rate = yaw_rate_max;
+    if (is_tailsitter() &&
+        ((tailsitter.input_type == TAILSITTER_INPUT_BF_ROLL_M) ||
+         (tailsitter.input_type == TAILSITTER_INPUT_BF_ROLL_P))) {
+        // constrain max yaw rate
+        max_rate = (yaw_rate_max < 1.0f) ? 1 : yaw_rate_max;
+    }
+    return plane.channel_rudder->get_control_in() * max_rate / 45;
 }
 
 /*
