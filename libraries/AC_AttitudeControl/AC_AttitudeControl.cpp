@@ -351,8 +351,8 @@ void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll(bool pla
 {
     // Convert from centidegrees on public interface to radians
     float euler_yaw_rate = radians(euler_yaw_rate_cds*0.01f);
-    float euler_pitch = radians(constrain_float(euler_pitch_cd * 0.01f, -90.0f, 90.0f));
-    float body_roll   = radians(constrain_float(body_roll_cd   * 0.01f, -90.0f, 90.0f));
+    float euler_pitch    = radians(constrain_float(euler_pitch_cd * 0.01f, -90.0f, 90.0f));
+    float body_roll      = radians(body_roll_cd * 0.01f);
 
     const float cpitch = cosf(euler_pitch);
     const float spitch = fabsf(sinf(euler_pitch));
@@ -365,16 +365,18 @@ void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll(bool pla
     Vector3f att_error;
     error_quat.to_axis_angle(att_error);
 
-    // limit yaw error
-    if (fabsf(att_error.z) < 2*AC_ATTITUDE_THRUST_ERROR_ANGLE) {
-        // update heading
-        if (plane_controls) {
-            float yaw_rate = euler_yaw_rate * spitch + body_roll * cpitch;
-            _attitude_target_euler_angle.z = wrap_PI(_attitude_target_euler_angle.z + yaw_rate * _dt);
-        } else {
-            _attitude_target_euler_angle.z = wrap_PI(_attitude_target_euler_angle.z + euler_yaw_rate * _dt);
-        }
+    // update heading
+    float yaw_rate = euler_yaw_rate;
+    if (plane_controls) {
+        yaw_rate = (euler_yaw_rate * spitch) + (body_roll * cpitch);
     }
+    // limit yaw error
+    float yaw_error = fabsf(att_error.z);
+    float error_ratio = yaw_error / M_PI_2;
+    if (error_ratio > 1) {
+        yaw_rate /= (error_ratio * error_ratio);
+    }
+    _attitude_target_euler_angle.z = wrap_PI(_attitude_target_euler_angle.z + yaw_rate * _dt);
 
     // init attitude target to desired euler yaw and pitch with zero roll
     _attitude_target_quat.from_euler(0, euler_pitch, _attitude_target_euler_angle.z);
