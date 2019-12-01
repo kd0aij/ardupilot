@@ -347,12 +347,12 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_yaw(float euler_roll_angle
 // Command euler yaw rate and pitch angle with roll angle specified in body frame
 // (used only by tailsitter quadplanes)
 // If plane_controls is true, swap the effects of roll and yaw as euler pitch approaches 90 degrees
-void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll(bool plane_controls, float euler_yaw_rate_cds, float euler_pitch_cd, float body_roll_cd)
+void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll(bool plane_controls, float body_roll_cd, float euler_pitch_cd, float euler_yaw_rate_cds)
 {
     // Convert from centidegrees on public interface to radians
     float euler_yaw_rate = radians(euler_yaw_rate_cds*0.01f);
     float euler_pitch    = radians(constrain_float(euler_pitch_cd * 0.01f, -90.0f, 90.0f));
-    float body_roll      = radians(body_roll_cd * 0.01f);
+    float body_roll      = radians(-body_roll_cd * 0.01f);
 
     const float cpitch = cosf(euler_pitch);
     const float spitch = fabsf(sinf(euler_pitch));
