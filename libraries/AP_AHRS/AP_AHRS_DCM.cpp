@@ -21,6 +21,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AP_AHRS.h"
+#include "AP_Logger/AP_Logger.h"
 #include <AP_HAL/AP_HAL.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_GPS/AP_GPS.h>
@@ -227,6 +228,10 @@ AP_AHRS_DCM::reset(bool recover_eulers)
             roll = 0.0f;
             pitch = 0.0f;
         }
+        AP::logger().Write("INSI", "TimeUS,ID,roll,pitch,accx,accy,accz", "QBfffff",
+                           AP_HAL::micros64(),
+                            1, (double)roll, (double)pitch,
+                            (double)initAccVec.x, (double)initAccVec.y, (double)initAccVec.z);
         _dcm_matrix.from_euler(roll, pitch, 0);
 
     }

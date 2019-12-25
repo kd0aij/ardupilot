@@ -430,6 +430,11 @@ bool NavEKF2_core::InitialiseFilterBootstrap(void)
         roll = atan2f(-initAccVec.y , -initAccVec.z);
     }
 
+    AP::logger().Write("INSI", "TimeUS,ID,roll,pitch,accx,accy,accz", "QBfffff",
+                           AP_HAL::micros64(),
+            2, (double)roll, (double)pitch,
+            (double)initAccVec.x, (double)initAccVec.y, (double)initAccVec.z);
+
     // calculate initial roll and pitch orientation
     stateStruct.quat.from_euler(roll, pitch, 0.0f);
 
