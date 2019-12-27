@@ -1399,16 +1399,27 @@ bool AP_AHRS_NavEKF::attitudes_consistent(char *failure_msg, const uint8_t failu
     Quaternion dcm_quat;
     Vector3f angle_diff;
     dcm_quat.from_rotation_matrix(get_DCM_rotation_body_to_ned());
-    primary_quat.angular_difference(dcm_quat).to_axis_angle(angle_diff);
-    float diff = safe_sqrt(sq(angle_diff.x)+sq(angle_diff.y));
-    if (diff > ATTITUDE_CHECK_THRESH_ROLL_PITCH_RAD) {
-        hal.util->snprintf(failure_msg, failure_msg_len, "DCM Roll/Pitch inconsistent by %d deg", (int)degrees(diff));
-        return false;
-    }
-    diff = fabsf(angle_diff.z);
-    if (check_yaw && (diff > ATTITUDE_CHECK_THRESH_YAW_RAD)) {
-        hal.util->snprintf(failure_msg, failure_msg_len, "DCM Yaw inconsistent by %d deg", (int)degrees(diff));
-        return false;
+    float dcm_pitch = dcm_quat.get_euler_pitch();
+    if ((fabsf(fabsf(dcm_pitch) - radians(90.0f))) < ATTITUDE_CHECK_THRESH_ROLL_PITCH_RAD) {
+        // pitch is near 90 degrees, ignore roll and yaw
+        hal.console->printf("DCM Pitch: %f deg, primary Pitch: %f deg; ignoring roll/yaw\n", degrees(dcm_pitch), degrees(primary_quat.get_euler_pitch()));
+        float diff = fabsf(primary_quat.get_euler_pitch() - dcm_pitch);
+        if (diff > ATTITUDE_CHECK_THRESH_ROLL_PITCH_RAD) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "DCM Pitch inconsistent by %d deg", (int)degrees(diff));
+            return false;
+        }
+    } else {
+        primary_quat.angular_difference(dcm_quat).to_axis_angle(angle_diff);
+        float diff = safe_sqrt(sq(angle_diff.x)+sq(angle_diff.y));
+        if (diff > ATTITUDE_CHECK_THRESH_ROLL_PITCH_RAD) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "DCM Roll/Pitch inconsistent by %d deg", (int)degrees(diff));
+            return false;
+        }
+        diff = fabsf(angle_diff.z);
+        if (check_yaw && (diff > ATTITUDE_CHECK_THRESH_YAW_RAD)) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "DCM Yaw inconsistent by %d deg", (int)degrees(diff));
+            return false;
+        }
     }
 
     return true;
