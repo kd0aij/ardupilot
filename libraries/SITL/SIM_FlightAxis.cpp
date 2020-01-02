@@ -409,11 +409,29 @@ void FlightAxis::update(const struct sitl_input &input)
 
     /*
       the quaternion convention in realflight seems to have Z negative
+     * mw note:
+     * this doesn't look like a rotation, it must instead mean
+     * that RealFlight body-frame coordinates are ENU and RF_Y is AP_X
+     * (direction of flight) RF_X is AP_Y (right wingtip) and RF_Z is -AP_Z (down)
      */
+//    Quaternion quat(state.m_orientationQuaternion_W,
+//                    state.m_orientationQuaternion_Y,
+//                    state.m_orientationQuaternion_X,
+//                    -state.m_orientationQuaternion_Z);
+
+    // rotation from ENU to NED doesn't work
+    // rotation about Y by 180 then Z by 90
     Quaternion quat(state.m_orientationQuaternion_W,
-                    state.m_orientationQuaternion_Y,
                     state.m_orientationQuaternion_X,
-                    -state.m_orientationQuaternion_Z);
+                    state.m_orientationQuaternion_Y,
+                    state.m_orientationQuaternion_Z);
+    Quaternion enu2ned;
+    enu2ned.q1 = 0;
+    enu2ned.q2 = 0.707106f;
+    enu2ned.q3 = 0.707106f;
+    enu2ned.q4 = 0;
+    quat = enu2ned * quat;
+
     quat.rotation_matrix(dcm);
 
     gyro = Vector3f(radians(constrain_float(state.m_rollRate_DEGpSEC, -2000, 2000)),
