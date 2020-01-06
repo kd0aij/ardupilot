@@ -2862,29 +2862,34 @@ int8_t QuadPlane::forward_throttle_pct(bool tiltrotor)
         }
     }
     /*
-      In QxFTHR modes, mix throttle to fwd throttle.
+      In QSFTHR mode, mix pitch to fwd throttle
+      In QAFTHR mode, use rc_fwd_thr_ch directly
     */
-    if (plane.control_mode == &plane.mode_qafthr ||
-        plane.control_mode == &plane.mode_qsfthr) {
+    switch (plane.control_mode->mode_number()) {
+        case Mode::Number::QSTAB_FTHR:
+        {
+            float mixScale = 0;
+            if (rc_fwd_thr_ch != nullptr) {
+                // set tilt zero offset from rc_fwd_thr_ch
+                mixScale = -0.5f * (rc_fwd_thr_ch->norm_input() + 1);
+            }
 
-        float offset = 0;
-        if (rc_fwd_thr_ch != nullptr) {
-            // set tilt zero offset from rc_fwd_thr_ch
-            offset = 0.25f * rc_fwd_thr_ch->norm_input();
+            float fwd_thr = 0;
+            if (!is_zero(fwd_thr_mix)) {
+                // calculate mix proportional to pitch input
+                float pitch = plane.channel_pitch->norm_input();
+                fwd_thr = constrain_float(mixScale * pitch, 0, 1);
+            }
+            return 100.0f * fwd_thr;
         }
-
-        float fwd_thr = 0;
-        if (!is_zero(fwd_thr_mix)) {
-            // calculate mix proportional to throttle above hover
-            // *** this relies on hover thrust being at center stick  ***
-            // get scaled throttle input and normalize to [0,1]
-            float thr = plane.channel_throttle->get_control_in();
-            thr /= plane.channel_throttle->get_range();
-
-            // set forward throttle to thr_max * mix
-            fwd_thr = constrain_float(fwd_thr_mix * 2 * (thr - 0.5f + offset), 0, 1);
+        case Mode::Number::QACRO_FTHR:
+        {
+            float thr = rc_fwd_thr_ch->get_control_in();
+            thr /= rc_fwd_thr_ch->get_range();
+            return 100.0f * constrain_float(thr, 0, 1);
         }
-        return 100.0f * fwd_thr;
+        default:
+            break;
     }
 
     /*

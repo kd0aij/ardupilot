@@ -33,7 +33,13 @@ void ModeQSFTHR::update()
         if (pitch_input > 0) {
             plane.nav_pitch_cd = pitch_input * MIN(plane.aparm.pitch_limit_max_cd, plane.quadplane.aparm.angle_max);
         } else {
-            plane.nav_pitch_cd = pitch_input * MIN(-plane.pitch_limit_min_cd, plane.quadplane.aparm.angle_max);
+            if (pitch_input > -.5f) {
+                // pitch up enough to compensate for motor tilt
+                plane.nav_pitch_cd = -pitch_input * 500;
+            } else {
+                // pitch down
+                plane.nav_pitch_cd = pitch_input * 500;
+            }
         }
         plane.nav_pitch_cd = constrain_int32(plane.nav_pitch_cd, plane.pitch_limit_min_cd, plane.aparm.pitch_limit_max_cd.get());
     }
