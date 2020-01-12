@@ -28,18 +28,19 @@ void ModeQSFTHR::update()
         // angle max for tailsitter pitch
         plane.nav_pitch_cd = pitch_input * plane.quadplane.aparm.angle_max;
     } else {
-        // pitch is further constrained by LIM_PITCH_MIN/MAX which may impose
-        // tighter (possibly asymmetrical) limits than Q_ANGLE_MAX
+        // NOT a tailsitter
         if (pitch_input > 0) {
+            // (back stick, up elevator)
+            // pitch is further constrained by LIM_PITCH_MIN/MAX which may impose
+            // tighter (possibly asymmetrical) limits than Q_ANGLE_MAX
             plane.nav_pitch_cd = pitch_input * MIN(plane.aparm.pitch_limit_max_cd, plane.quadplane.aparm.angle_max);
         } else {
-            if (pitch_input > -.5f) {
-                // pitch up enough to compensate for motor tilt
-                plane.nav_pitch_cd = -pitch_input * 500;
-            } else {
-                // pitch down
-                plane.nav_pitch_cd = pitch_input * 500;
+            // (forward stick, down elevator) pitch up enough to compensate for motor tilt
+            float mixScale = 0.5;
+            if (plane.quadplane.rc_fwd_thr_ch != nullptr) {
+                mixScale = 0.5f * (plane.quadplane.rc_fwd_thr_ch->norm_input() + 1);
             }
+            plane.nav_pitch_cd = -pitch_input * mixScale * 1000;
         }
         plane.nav_pitch_cd = constrain_int32(plane.nav_pitch_cd, plane.pitch_limit_min_cd, plane.aparm.pitch_limit_max_cd.get());
     }

@@ -2868,23 +2868,20 @@ int8_t QuadPlane::forward_throttle_pct(bool tiltrotor)
     switch (plane.control_mode->mode_number()) {
         case Mode::Number::QSTAB_FTHR:
         {
-            float mixScale = 0;
-            if (rc_fwd_thr_ch != nullptr) {
-                // set tilt zero offset from rc_fwd_thr_ch
-                mixScale = -0.5f * (rc_fwd_thr_ch->norm_input() + 1);
-            }
-
             float fwd_thr = 0;
             if (!is_zero(fwd_thr_mix)) {
                 // calculate mix proportional to pitch input
                 float pitch = plane.channel_pitch->norm_input();
-                fwd_thr = constrain_float(mixScale * pitch, 0, 1);
+                fwd_thr = constrain_float(-fwd_thr_mix * pitch, 0, 1);
             }
             return 100.0f * fwd_thr;
         }
         case Mode::Number::QACRO_FTHR:
         {
-            float thr = rc_fwd_thr_ch->get_control_in();
+            float thr = 0;
+            if (rc_fwd_thr_ch != nullptr) {
+                thr = rc_fwd_thr_ch->get_control_in();
+            }
             thr /= rc_fwd_thr_ch->get_range();
             return 100.0f * constrain_float(thr, 0, 1);
         }
