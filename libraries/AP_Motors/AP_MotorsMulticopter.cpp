@@ -773,6 +773,10 @@ void AP_MotorsMulticopter::output_motor_mask(float thrust, uint8_t mask, float r
             }
         }
     }
+    // if a boost motor is assigned, assume it is the primary propulsion in forward flight
+    if (SRV_Channels::function_assigned(SRV_Channel::k_boost_throttle)) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_boost_throttle, thrust*1000);
+    }
 }
 
 // get_motor_mask - returns a bitmask of which outputs are being used for motors (1 means being used)
