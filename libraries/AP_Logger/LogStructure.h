@@ -1707,7 +1707,7 @@ struct PACKED log_Arm_Disarm {
 // @LoggerMessage: MSG
 // @Description: Textual messages
 // @Field: TimeUS: Time since system startup
-// @Field: Message: message text
+// @Field: Message: first 50 characters of message text 
 
 // @LoggerMessage: MULT
 // @Description: Message mapping from single character to numeric multiplier
