@@ -1,4 +1,5 @@
 #include "Plane.h"
+#include "DBGprint.h"
 
 const AP_Param::GroupInfo QuadPlane::var_info[] = {
 
@@ -1746,6 +1747,25 @@ void QuadPlane::update(void)
     if (!setup()) {
         return;
     }
+
+    static uint8_t dbgctr = 0;
+    float t_sec = .001f * AP_HAL::millis();
+    // stagger these calls to make the initial times different
+    // and avoid calling more than one per loop
+    uint8_t dbgct4 = (dbgctr >> 2) % 4;
+    if (dbgct4 == 0) 
+        DBGprint::printf(1000, "update time: %f\n", t_sec);
+    if (dbgct4 == 1) 
+        DBGprint::console(1000, "update time: %6.3f\n", t_sec);
+    if (dbgct4 == 2) 
+        DBGprint::gcstxt(1000, "update time: %f", t_sec);
+    dbgctr++;
+    
+    // 50 Hz logging
+    DBGprint::dflog(20, "INTV", "TimeUS,Sin", "Qf", AP_HAL::micros64(),
+                        sinf(fmodf(t_sec, M_2PI)));
+    
+
 
     if ((ahrs_view != NULL) && !is_equal(_last_ahrs_trim_pitch, ahrs_trim_pitch.get())) {
         _last_ahrs_trim_pitch = ahrs_trim_pitch.get();
