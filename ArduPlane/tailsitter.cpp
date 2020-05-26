@@ -118,7 +118,7 @@ void QuadPlane::tailsitter_output(void)
         tailsitter_speed_scaling();
     }
 
-    if (tailsitter.vectored_hover_gain > 0) {
+    if (true || tailsitter.vectored_hover_gain > 0) {
         // thrust vectoring VTOL modes
         tilt_left = SRV_Channels::get_output_scaled(SRV_Channel::k_tiltMotorLeft);
         tilt_right = SRV_Channels::get_output_scaled(SRV_Channel::k_tiltMotorRight);
@@ -127,13 +127,15 @@ void QuadPlane::tailsitter_output(void)
           power law. This allows the motors to point straight up for
           takeoff without integrator windup
          */
-        float des_pitch_cd = attitude_control->get_att_target_euler_cd().y;
-        int32_t pitch_error_cd = (des_pitch_cd - ahrs_view->pitch_sensor) * 0.5;
+        int32_t pitch_error_cd = (plane.nav_pitch_cd - ahrs_view->pitch_sensor) * 0.5;
         float extra_pitch = constrain_float(pitch_error_cd, -SERVO_MAX, SERVO_MAX) / SERVO_MAX;
         float extra_sign = extra_pitch > 0?1:-1;
         float extra_elevator = 0;
-        if (!is_zero(extra_pitch) && in_vtol_mode()) {
+        bool last_is_flying = is_flying_vtol();
+        DBGprint::dbgEdgePrint(DBGTYPE::GCS, last_is_flying, 1000, "**is_flying: %d", last_is_flying);
+        if (is_positive(tailsitter.vectored_hover_power) && !is_zero(extra_pitch) && in_vtol_mode()) {
             extra_elevator = extra_sign * powf(fabsf(extra_pitch), tailsitter.vectored_hover_power) * SERVO_MAX;
+//            DBGprint::dbgprint(DBGTYPE::GCS, 250, 10000, "extra pitch: %f, extra_elev: %f", extra_pitch, extra_elevator);
         }
         tilt_left  = extra_elevator + tilt_left * tailsitter.vectored_hover_gain;
         tilt_right = extra_elevator + tilt_right * tailsitter.vectored_hover_gain;
@@ -145,6 +147,7 @@ void QuadPlane::tailsitter_output(void)
         }
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft, tilt_left);
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, tilt_right);
+//        DBGprint::dbgprint(DBGTYPE::GCS, 250, 10000, "target_pitch, motors->pitch, extra_elev, tilt: %f, %f, %f, %f", .01*des_pitch_cd, motors->get_pitch(), extra_elevator, tilt_left);
     }
 
 
@@ -206,6 +209,7 @@ bool QuadPlane::tailsitter_transition_vtol_complete(void) const
         return true;
     }
     // still waiting
+//    DBGprint::dbgprint(DBGTYPE::GCS, 250, 1000, "twait: reset_rate_controller_I_terms");
     attitude_control->reset_rate_controller_I_terms();
     return false;
 }
