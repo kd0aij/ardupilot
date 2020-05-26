@@ -1747,6 +1747,15 @@ void QuadPlane::update(void)
         return;
     }
 
+    DBGprint::dbgEdgePrint(DBGTYPE::GCS, (void *)assisted_flight, 1000, "assisted_flight: %i", assisted_flight);
+    
+    // 50 Hz logging
+    float t_sec = .001f * AP_HAL::millis();
+    DBGprint::dflog(20, "INTV", "TimeUS,Sin", "Qf", AP_HAL::micros64(),
+                        sinf(fmodf(t_sec, M_2PI)));
+    
+
+
     if ((ahrs_view != NULL) && !is_equal(_last_ahrs_trim_pitch, ahrs_trim_pitch.get())) {
         _last_ahrs_trim_pitch = ahrs_trim_pitch.get();
         ahrs_view->set_pitch_trim(_last_ahrs_trim_pitch);
@@ -1775,6 +1784,7 @@ void QuadPlane::update(void)
          */
         if (is_tailsitter()) {
             // tailsitters only relax I terms, to make ground testing easier
+            DBGprint::dbgprint(DBGTYPE::GCS, 250, 1000, "disarmed: reset_rate_controller_I_terms");
             attitude_control->reset_rate_controller_I_terms();
         } else {
             // otherwise full relax
