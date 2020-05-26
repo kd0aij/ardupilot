@@ -114,11 +114,13 @@ private:
             case Otype::PRINTF:
                 vprintf(fmt,ap);
                 break;
+            case Otype::GCS:
+#ifndef HAL_NO_GCS
+                gcs().send_textv(MAV_SEVERITY_INFO, fmt, ap);
+                break;
+#endif
             case Otype::CONSOLE:
                 AP_HAL::get_HAL().console->vprintf(fmt, ap);
-                break;
-            case Otype::GCS:
-                gcs().send_textv(MAV_SEVERITY_INFO, fmt, ap);
                 break;
             }
         }
