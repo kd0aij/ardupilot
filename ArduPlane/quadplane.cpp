@@ -485,9 +485,9 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     AP_GROUPINFO("TAILSIT_GSCMIN", 18, QuadPlane, tailsitter.gain_scaling_min, 0.4),
 
     // @Param: FWD_THR_MAX
-    // @DisplayName: VTOL forward throttle max
-    // @Description: Maximum value for forward throttle.
-    // @Range 0 1
+    // @DisplayName: VTOL forward throttle max percent
+    // @Description: Maximum value for forward throttle (percent).
+    // @Range: 0 100
     // @RebootRequired: False
     AP_GROUPINFO("FWD_THR_MAX", 19, QuadPlane, fwd_thr_max, 0),
 
@@ -2947,9 +2947,9 @@ int8_t QuadPlane::forward_throttle_pct(bool tiltrotor)
             // calculate fwd throttle demand from manual input
             float fwd_thr = (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
 
-            // set forward throttle to fwd_thr_max * (manual input + mix)
-            fwd_thr = constrain_float(fwd_thr_max, 0, 1) * constrain_float(fwd_thr, 0, 1);
-            return 100.0f * fwd_thr;
+            // set forward throttle to fwd_thr_max * (manual input + mix): range [0,100]
+            fwd_thr = constrain_float(fwd_thr_max, 0, 100) * constrain_float(fwd_thr, 0, 1);
+            return fwd_thr;
         }
     }
 
