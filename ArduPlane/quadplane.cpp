@@ -658,9 +658,6 @@ bool QuadPlane::setup(void)
         break;
     }
 
-    // rc_fwd_thr_ch will be null if no channel is assigned
-    rc_fwd_thr_ch = rc().find_channel_for_option(RC_Channel::AUX_FUNC::FWD_THR);
-
     if (tailsitter.motor_mask == 0) {
         // this is a normal quadplane
         switch (motor_class) {
