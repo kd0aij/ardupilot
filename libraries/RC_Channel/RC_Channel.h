@@ -181,7 +181,6 @@ public:
         DISARM =              81, // disarm vehicle
         Q_ASSIST =            82, // disable, enable and force Q assist
         ZIGZAG_Auto =         83, // zigzag auto switch
-        FWD_THR =             84, // VTOL manual forward throttle
         KILL_IMU1 =          100, // disable first IMU (for IMU failure testing)
         KILL_IMU2 =          101, // disable second IMU (for IMU failure testing)
         CAM_MODE_TOGGLE =    102, // Momentary switch to cycle camera modes
@@ -193,6 +192,7 @@ public:
         // inputs eventually used to replace RCMAP
         MAINSAIL =           207, // mainsail input
         FLAP =               208, // flap input
+        FWD_THR =            209, // VTOL manual forward throttle
     };
     typedef enum AUX_FUNC aux_func_t;
 

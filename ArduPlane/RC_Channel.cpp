@@ -166,7 +166,7 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         break;
 
     case AUX_FUNC::FWD_THR:
-        break;
+        break; // VTOL forward throttle input label, nothing to do
 
     default:
         RC_Channel::do_aux_function(ch_option, ch_flag);
