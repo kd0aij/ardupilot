@@ -336,7 +336,6 @@ private:
     AP_Float throttle_expo;
 
     // manual forward throttle input
-    AP_Int8  fwd_thr_chan;
     AP_Float fwd_thr_max;
     RC_Channel *rc_fwd_thr_ch;
 
