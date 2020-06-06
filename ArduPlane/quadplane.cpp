@@ -1211,6 +1211,9 @@ bool QuadPlane::is_flying_vtol(void) const
     if (plane.control_mode == &plane.mode_qacro) {
         return true;
     }
+    if (plane.control_mode == &plane.mode_qboat) {
+        return true;
+    }
     if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
         return true;
     }
@@ -2053,6 +2056,7 @@ void QuadPlane::control_run(void)
         control_qacro();
         break;
     case Mode::Number::QSTABILIZE:
+    case Mode::Number::QBOAT:
         control_stabilize();
         break;
     case Mode::Number::QHOVER:
@@ -2101,6 +2105,7 @@ bool QuadPlane::init_mode(void)
 
     switch (plane.control_mode->mode_number()) {
     case Mode::Number::QSTABILIZE:
+    case Mode::Number::QBOAT:
         init_stabilize();
         break;
     case Mode::Number::QHOVER:
@@ -2215,6 +2220,7 @@ bool QuadPlane::in_vtol_mode(void) const
             plane.control_mode == &plane.mode_qland ||
             plane.control_mode == &plane.mode_qrtl ||
             plane.control_mode == &plane.mode_qacro ||
+            plane.control_mode == &plane.mode_qboat ||
             plane.control_mode == &plane.mode_qautotune ||
             ((plane.control_mode == &plane.mode_guided || plane.control_mode == &plane.mode_avoidADSB) && plane.auto_state.vtol_loiter) ||
             in_vtol_auto());
@@ -2925,20 +2931,26 @@ int8_t QuadPlane::forward_throttle_pct()
       recovery modes for a quadplane and need to be as simple as
       possible. They will drift with the wind.
     */
+    float fwd_max = constrain_float(fwd_thr_max, 0, 100);
+    float man_fwd_thr = 0.0f;
+    if (rc_fwd_thr_ch != nullptr) {
+        // calculate manual forward throttle demand as fwd_thr_max * (manual input + mix): range [0,100]
+        man_fwd_thr = (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
+    }
+
     if (plane.control_mode == &plane.mode_qacro ||
         plane.control_mode == &plane.mode_qstabilize ||
         plane.control_mode == &plane.mode_qhover) {
 
-        if (rc_fwd_thr_ch == nullptr) {
-            return 0;
-        } else {
-            // calculate fwd throttle demand from manual input
-            float fwd_thr = (1.0f + rc_fwd_thr_ch->norm_input()) / 2;
+        return fwd_max * man_fwd_thr;
+    }
 
-            // set forward throttle to fwd_thr_max * (manual input + mix): range [0,100]
-            fwd_thr = constrain_float(fwd_thr_max, 0, 100) * constrain_float(fwd_thr, 0, 1);
-            return fwd_thr;
-        }
+    //  In QBOAT mode, mix pitch to fwd throttle.    
+    if (plane.control_mode == &plane.mode_qboat) {
+        // calculate forward tilt proportional to pitch input
+        float pitch = plane.channel_pitch->norm_input();
+        man_fwd_thr -= pitch;
+        return constrain_int16(fwd_max * man_fwd_thr, 0, 100);
     }
 
     /*

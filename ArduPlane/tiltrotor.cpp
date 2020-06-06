@@ -118,20 +118,24 @@ void QuadPlane::tiltrotor_continuous_update(void)
         return;
     }
 
-    // if not in assisted flight and in QACRO, QSTABILIZE or QHOVER mode
-    if (!assisted_flight &&
-        (plane.control_mode == &plane.mode_qacro ||
-         plane.control_mode == &plane.mode_qstabilize ||
-         plane.control_mode == &plane.mode_qhover)) {
-        if (rc_fwd_thr_ch == nullptr) {
-            // no manual throttle control, set angle to zero
-            tiltrotor_slew(0);
-        } else {
+    // if not in assisted flight
+    if (!assisted_flight) {
+        // if in QACRO, QSTABILIZE or QHOVER mode
+        if (plane.control_mode == &plane.mode_qacro ||
+            plane.control_mode == &plane.mode_qstabilize ||
+            plane.control_mode == &plane.mode_qhover ||
+            plane.control_mode == &plane.mode_qboat) {
+            
+            // If no manual throttle control, set angle to zero
+            if ((rc_fwd_thr_ch == nullptr) && (plane.control_mode != &plane.mode_qboat)) {
+                tiltrotor_slew(0);
+                return;
+            }
             // manual control of forward throttle
             float settilt = .01f * forward_throttle_pct();
             tiltrotor_slew(settilt);
+            return;
         }
-        return;
     }
 
     if (assisted_flight &&
