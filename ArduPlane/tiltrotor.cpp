@@ -128,7 +128,7 @@ void QuadPlane::tiltrotor_continuous_update(void)
             tiltrotor_slew(0);
         } else {
             // manual control of forward throttle
-            float settilt = .01f * forward_throttle_pct(true);
+            float settilt = .01f * forward_throttle_pct();
             tiltrotor_slew(settilt);
         }
         return;

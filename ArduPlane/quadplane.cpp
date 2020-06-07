@@ -2917,17 +2917,8 @@ void QuadPlane::Log_Write_QControl_Tuning()
   reduces the need for down pitch which reduces load on the vertical
   lift motors.
  */
-int8_t QuadPlane::forward_throttle_pct(bool tiltrotor)
+int8_t QuadPlane::forward_throttle_pct()
 {
-    // if not a tiltrotor, disable forward motor:
-    if (!tiltrotor) {
-        // if not in a VTOL mode or not armed or spooled down
-        if (!in_vtol_mode() ||
-            !motors->armed() ||
-            motors->get_desired_spool_state() < AP_Motors::DesiredSpoolState::GROUND_IDLE) {
-            return 0;
-        }
-    }
     /*
       Unless an RC channel is assigned for manual forward throttle control,
       we don't use forward throttle in QHOVER or QSTABILIZE as they are the primary
