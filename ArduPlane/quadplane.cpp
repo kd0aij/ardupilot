@@ -2950,7 +2950,7 @@ int8_t QuadPlane::forward_throttle_pct()
         // calculate forward tilt proportional to pitch input
         float pitch = plane.channel_pitch->norm_input();
         man_fwd_thr -= pitch;
-        return constrain_int16(fwd_max * man_fwd_thr, 0, 100);
+        return constrain_int16(fwd_max * man_fwd_thr, 0, fwd_max);
     }
 
     /*
