@@ -328,8 +328,8 @@ const AP_Param::GroupInfo QuadPlane::var_info[] = {
 
     // @Param: OPTIONS
     // @DisplayName: quadplane options
-    // @Description: This provides a set of additional control options for quadplanes. LevelTransition means that the wings should be held level to within LEVEL_ROLL_LIMIT degrees during transition to fixed wing flight, and the vehicle will not use the vertical lift motors to climb during the transition. If AllowFWTakeoff bit is not set then fixed wing takeoff on quadplanes will instead perform a VTOL takeoff. If AllowFWLand bit is not set then fixed wing land on quadplanes will instead perform a VTOL land. If respect takeoff frame is not set the vehicle will interpret all takeoff waypoints as an altitude above the corrent position. When Use QRTL is set it will replace QLAND with QRTL for failsafe actions when in VTOL modes.
-    // @Bitmask: 0:LevelTransition,1:AllowFWTakeoff,2:AllowFWLand,3:Respect takeoff frame types,4:Use a fixed wing approach for VTOL landings,5:Use QRTL instead of QLAND for failsafe when in VTOL modes,6:Use idle governor in MANUAL
+    // @Description: This provides a set of additional control options for quadplanes. LevelTransition means that the wings should be held level to within LEVEL_ROLL_LIMIT degrees during transition to fixed wing flight, and the vehicle will not use the vertical lift motors to climb during the transition. If AllowFWTakeoff bit is not set then fixed wing takeoff on quadplanes will instead perform a VTOL takeoff. If AllowFWLand bit is not set then fixed wing land on quadplanes will instead perform a VTOL land. If respect takeoff frame is not set the vehicle will interpret all takeoff waypoints as an altitude above the current position. When Use QRTL is set it will replace QLAND with QRTL for failsafe actions when in VTOL modes. When AIRMODE is set AirMode is automatically enabled if arming by RC channel.
+    // @Bitmask: 0:LevelTransition,1:AllowFWTakeoff,2:AllowFWLand,3:Respect takeoff frame types,4:Use a fixed wing approach for VTOL landings,5:Use QRTL instead of QLAND for failsafe when in VTOL modes,6:Use idle governor in MANUAL,7:enable AirMode if arming by aux switch
     AP_GROUPINFO("OPTIONS", 58, QuadPlane, options, 0),
 
     AP_SUBGROUPEXTENSION("",59, QuadPlane, var_info2),
@@ -897,7 +897,7 @@ void QuadPlane::hold_stabilize(float throttle_in)
     // call attitude controller
     multicopter_attitude_rate_update(get_desired_yaw_rate_cds());
 
-    if (throttle_in <= 0) {
+    if ((throttle_in <= 0) && (plane.air_mode == AirMode::OFF)) {
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
         attitude_control->set_throttle_out(0, true, 0);
         if (!is_tailsitter()) {
@@ -1398,6 +1398,18 @@ void QuadPlane::set_armed(bool armed)
     if (!initialised) {
         return;
     }
+    // If OPTION_AIRMODE is selected and no AIRMODE switch is assigned and
+    // rudder arming is disabled (don't want vehicle to yaw when disarming with rudder)
+    if ((options & OPTION_AIRMODE) && 
+        (rc().find_channel_for_option(RC_Channel::AUX_FUNC::AIRMODE) == nullptr) &&
+        (plane.arming.get_rudder_arming_type() == AP_Arming::RudderArming::IS_DISABLED)) {
+        // automatically enable/disable AirMode on arming/disarming
+        if (armed) {
+            plane.air_mode = AirMode::ON;
+        } else {
+            plane.air_mode = AirMode::OFF;
+        }
+    }
     motors->armed(armed);
 }
 
@@ -1896,7 +1908,7 @@ void QuadPlane::update_throttle_suppression(void)
     }
 
     // if the users throttle is above zero then allow motors to run
-    if (plane.get_throttle_input() != 0) {
+    if ((plane.get_throttle_input() != 0) || (plane.air_mode == AirMode::ON)) {
         return;
     }
 
@@ -3247,9 +3259,9 @@ void QuadPlane::update_throttle_mix(void)
         return;
     }
 
-    if (plane.control_mode == &plane.mode_qstabilize) {
+    if ((plane.control_mode == &plane.mode_qstabilize) || (plane.control_mode == &plane.mode_qacro)) {
         // manual throttle
-        if (plane.get_throttle_input() <= 0) {
+        if ((plane.get_throttle_input() <= 0) && (plane.air_mode == AirMode::OFF)) {
             attitude_control->set_throttle_mix_min();
         } else {
             attitude_control->set_throttle_mix_man();

@@ -785,6 +785,9 @@ private:
     // soaring mode-change timer
     uint32_t soaring_mode_timer;
 
+    // air mode state: off=0, on=1
+    AirMode air_mode;
+
     // Attitude.cpp
     void adjust_nav_pitch_throttle(void);
     void update_load_factor(void);

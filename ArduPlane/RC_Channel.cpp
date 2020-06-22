@@ -95,6 +95,7 @@ void RC_Channel_Plane::init_aux_function(const RC_Channel::aux_func_t ch_option,
         break;
 
     case AUX_FUNC::Q_ASSIST:
+    case AUX_FUNC::AIRMODE:
         do_aux_function(ch_option, ch_flag);
         break;
 
@@ -163,6 +164,19 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const AuxSwit
     case AUX_FUNC::Q_ASSIST:
         do_aux_function_q_assist_state(ch_flag);
         break;
+
+    case AUX_FUNC::AIRMODE:
+        switch (ch_flag) {
+        case AuxSwitchPos::HIGH:
+            plane.air_mode = AirMode::ON;
+            break;
+        case AuxSwitchPos::MIDDLE:
+            break;
+        case AuxSwitchPos::LOW:
+            plane.air_mode = AirMode::OFF;
+            break;
+        }
+    break;
 
     default:
         RC_Channel::do_aux_function(ch_option, ch_flag);
