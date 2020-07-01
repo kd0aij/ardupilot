@@ -545,7 +545,7 @@ bool AP_Arming::rc_arm_checks(AP_Arming::Method method)
         return true;
     }
 
-    // only check if we've recieved some form of input within the last second
+    // only check if we've received some form of input within the last second
     // this is a protection against a vehicle having never enabled an input
     uint32_t last_input_ms = rc().last_input_ms();
     if ((last_input_ms == 0) || ((AP_HAL::millis() - last_input_ms) > 1000)) {
@@ -577,10 +577,13 @@ bool AP_Arming::rc_arm_checks(AP_Arming::Method method)
             }
         }
 
-        if (rc().arming_check_throttle()) {
+        // only check throttle inputs if not skipped and not flying
+        if (!rc().arming_skip_check_throttle() && !AP_Notify::flags.flying) {
             RC_Channel *c = rc().channel(rcmap->throttle() - 1);
+            // this assumes throttle range is [0, 100] or [-100, 100] when reversible
+            constexpr int16_t max_limit = 5;
             if (c != nullptr) {
-                if (c->get_control_in() != 0) {
+                if (abs(c->get_control_in()) > max_limit) {
                     check_failed(ARMING_CHECK_RC, true, "Throttle (RC%d) is not neutral", rcmap->throttle());
                     check_passed = false;
                 }
@@ -588,8 +591,7 @@ bool AP_Arming::rc_arm_checks(AP_Arming::Method method)
             c = rc().find_channel_for_option(RC_Channel::AUX_FUNC::FWD_THR);
             if (c != nullptr) {
                 uint8_t fwd_thr = c->percent_input();
-                // require channel input within 2% of minimum
-                if (fwd_thr > 2) {
+                if (fwd_thr > max_limit) {
                     check_failed(ARMING_CHECK_RC, true, "VTOL Fwd Throttle is not zero");
                     check_passed = false;
                 }
