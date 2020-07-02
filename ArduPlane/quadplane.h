@@ -36,6 +36,7 @@ public:
     friend class ModeQStabilize;
     friend class ModeQAutotune;
     friend class ModeQAcro;
+    friend class ModeQBoat;
     
     QuadPlane(AP_AHRS_NavEKF &_ahrs);
 
