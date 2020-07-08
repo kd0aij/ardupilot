@@ -3522,7 +3522,7 @@ class AutoTest(ABC):
                 raise ValueError("message (%s) has no field %s" %
                                  (str(m), channel_field))
             if comparator(m_value, value):
-                return
+                return m_value
 
     def wait_rc_channel_value(self, channel, value, timeout=2):
         """wait for channel to hit value"""
@@ -3763,7 +3763,7 @@ Also, ignores heartbeats not from our target system'''
         """ if using SITL estimates directly """
         if (int(self.get_parameter('AHRS_EKF_TYPE')) == 10):
             self.progress("GPS disable skipped")
-            return 
+            return
 
         # all of these must NOT be set for arming NOT to happen:
         not_required_value = mavutil.mavlink.ESTIMATOR_POS_HORIZ_REL
@@ -6209,7 +6209,7 @@ switch value'''
             raise NotAchievedException("Did not get HEARTBEAT message")
         mav_flight_mode = heartbeat.custom_mode
         self.progress(" mode=%u heartbeat=%u" % (flight_mode, mav_flight_mode))
-        if mav_flight_mode == flight_mode: 
+        if mav_flight_mode == flight_mode:
             self.progress("flight mode match")
             return True
             # FIXME: need to check other values as well
@@ -6233,7 +6233,7 @@ switch value'''
             return True
             # FIXME: need to check other values as well
         return False
-    
+
     def tfp_validate_home_status(self, value):
         self.progress("validating home status(0x%02x)" % value)
         home_dist_m = self.bit_extract(value,2,10) * (10^self.bit_extract(value,0,2))
@@ -6252,7 +6252,7 @@ switch value'''
             return True
             # FIXME: need to check other values as well
         return False
-    
+
     def tfp_validate_gps_status(self, value):
         self.progress("validating gps status(0x%02x)" % value)
         num_sats = self.bit_extract(value,0,4)
@@ -6287,7 +6287,7 @@ switch value'''
         self.progress(" yaw=%u gpi=%u" % (yaw, gpi.hdg*0.01))
         self.progress(" xy_vel=%u" % xy_vel)
         self.progress(" z_vel_dm_per_second=%u" % z_vel_dm_per_second)
-        if self.compare_number_percent(gpi.hdg*0.01,yaw,10): 
+        if self.compare_number_percent(gpi.hdg*0.01,yaw,10):
             self.progress("Yaw match")
             return True
               # FIXME: need to be under way to check the velocities, really....
@@ -6526,7 +6526,7 @@ switch value'''
         self.progress("BATTERY_STATUS volatge==%f frsky==%f" % (battery_status_value, voltage))
         if self.compare_number_percent(battery_status_value,voltage,10):
             return True
-        return False  
+        return False
     def tfs_validate_current1(self, value):
         self.progress("validating battery1 (0x%02x)" % value)
         current = value
@@ -6542,7 +6542,7 @@ switch value'''
         self.progress("BATTERY_STATUS current==%f frsky==%f" % (battery_status_current, current))
         if self.compare_number_percent(battery_status_current,current,10):
             return True
-        return False 
+        return False
     def tfs_validate_fuel(self, value):
         self.progress("validating fuel (0x%02x)" % value)
         fuel = value
@@ -6558,7 +6558,7 @@ switch value'''
         self.progress("BATTERY_STATUS fuel==%f frsky==%f" % (battery_status_fuel, fuel))
         if self.compare_number_percent(battery_status_fuel,fuel,10):
             return True
-        return False 
+        return False
 
     def tfs_validate_tmp1(self, value):
         self.progress("validating tmp1 (0x%02x)" % value)
