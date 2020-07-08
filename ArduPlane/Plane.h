@@ -789,6 +789,9 @@ private:
     bool non_auto_terrain_disable;
     bool terrain_disabled();
 
+    // air mode state: off, on
+    AirMode air_mode;
+
     // Attitude.cpp
     void adjust_nav_pitch_throttle(void);
     void update_load_factor(void);

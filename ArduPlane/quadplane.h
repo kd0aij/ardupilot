@@ -11,6 +11,7 @@
 #include <AC_Avoidance/AC_Avoid.h>
 #include <AP_Proximity/AP_Proximity.h>
 #include "qautotune.h"
+#include "defines.h"
 
 /*
   QuadPlane specific functionality
@@ -24,6 +25,8 @@ public:
     friend class AP_AdvancedFailsafe_Plane;
     friend class QAutoTune;
     friend class AP_Arming_Plane;
+    friend class RC_Channel_Plane;
+    friend class RC_Channel;
 
     friend class Mode;
     friend class ModeAuto;
@@ -556,6 +559,7 @@ private:
         OPTION_IDLE_GOV_MANUAL=(1<<6),
         OPTION_Q_ASSIST_FORCE_ENABLE=(1<<7),
         OPTION_TAILSIT_Q_ASSIST_MOTORS_ONLY=(1<<8),
+        OPTION_AIRMODE=(1<<9),
     };
 
     AP_Float takeoff_failure_scalar;
