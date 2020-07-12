@@ -789,6 +789,7 @@ class AutoTest(ABC):
         if self.force_ahrs_type is not None:
             self.force_ahrs_type = int(self.force_ahrs_type)
         self.logs_dir = logs_dir
+        self.htree = None
 
     @staticmethod
     def progress(text):
@@ -1119,6 +1120,81 @@ class AutoTest(ABC):
 #                fail = True
 #        if fail:
 #            raise NotAchievedException("Extra parameters in XML")
+
+    def get_parameter_definitions(self):
+        """get parameter definitions for this vehicle as htree"""
+        """copied from test_parameter_documentation_get_all_parameters"""
+        xml_filepath = os.path.join(self.rootdir(), "apm.pdef.xml")
+        param_parse_filepath = os.path.join(self.rootdir(), 'Tools', 'autotest', 'param_metadata', 'param_parse.py')
+        try:
+            os.unlink(xml_filepath)
+        except OSError:
+            pass
+        vehicle = self.log_name()
+        if vehicle == "HeliCopter":
+            vehicle = "ArduCopter"
+        if vehicle == "QuadPlane":
+            vehicle = "ArduPlane"
+        cmd = [param_parse_filepath, '--vehicle', vehicle]
+        if util.run_cmd(cmd,
+                        directory=util.reltopdir('.')) != 0:
+            raise NotAchievedException("Failed param_parse.py (%s)" % vehicle)
+        self.progress("constructing %s parameter htree" % vehicle)
+        return self.htree_from_xml(xml_filepath)
+
+
+    def get_function_code_from_name_and_description(self, name, description):
+        """given parameter name and part or all of the description of a value,
+        return the float value. copied from mavproxy param_editor"""
+        if (self.htree == None):
+            self.htree = self.get_parameter_definitions()
+        function_code = self.htree[name]
+        code = None
+        if function_code.values is not None:
+            v = function_code.findall('values')[0].getchildren()
+            # look for an exact match
+            for i in range(len(v)):
+                if v[i].text == description:
+                    code = v[i].get('code')
+            if code == None:
+                # look for partial match
+                for i in range(len(v)):
+                    if v[i].text.find(description) >= 0:
+                        if code != None:
+                            raise NotAchievedException("ambiguous function description '%s' for param %s" % (description, name))
+                        code = v[i].get('code')
+            if code != None:
+                return float(code)
+            else:
+                raise NotAchievedException("no matching function description '%s' for param %s" % (description, name))
+
+
+    def get_bitfield_number_from_description(self, param_name, description):
+        """given the name of a bitfield parameter and part or all of the bitfield
+        description, return the integer position of the option bit
+        copied from mavproxy param_editor"""
+        if (self.htree == None):
+            self.htree = self.get_parameter_definitions()
+        bf_param = self.htree[param_name]
+
+        # verify that this is a Bitmask parameter
+        if (bf_param.field.get('name') != "Bitmask"):
+            raise NotAchievedException("parameter type not Bitmask")
+
+        # convert bitfield description into a map of {bitnumber:bitdescription}
+        res = []
+        for sub in bf_param.field.text.split(","):
+            if ':' in sub:
+                res.append(map(str.strip, sub.split(':',1)))
+        res = dict(res)
+        bitnumber = None
+        for key in res.keys():
+            if res[key].find(description) >= 0:
+                if bitnumber != None:
+                    raise NotAchievedException("ambiguous bit description %s for param %s" % (description, name))
+                bitnumber = int(key)
+        return bitnumber
+
 
     def find_format_defines(self, filepath):
         ret = {}
