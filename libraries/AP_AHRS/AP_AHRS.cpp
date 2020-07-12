@@ -127,7 +127,7 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
     // @Param: EKF_TYPE
     // @DisplayName: Use NavEKF Kalman filter for attitude and position estimation
     // @Description: This controls which NavEKF Kalman filter version is used for attitude and position estimation
-    // @Values: 0:Disabled,2:Enable EKF2,3:Enable EKF3
+    // @Values: 0:Disabled,2:Enable EKF2,3:Enable EKF3,10:SITL
     // @User: Advanced
     AP_GROUPINFO("EKF_TYPE",  14, AP_AHRS, _ekf_type, 2),
 #endif
