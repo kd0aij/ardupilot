@@ -81,7 +81,14 @@ class AutoTestQuadPlane(AutoTest):
     def test_airmode(self):
         """Check that plane.air_mode turns on and off as required"""
         self.progress("########## Testing AirMode operation")
-        self.set_parameter("AHRS_EKF_TYPE", 10)
+
+        """
+        When AHRS_EKF_TYPE is set to SITL (10)  we use the simulated Flight
+        Dynamics Model state directly from the physics engine instead of running
+        an EKF to estimate it
+        """
+        ekf_sitl = self.get_function_code_from_name_and_description('AHRS_EKF_TYPE', 'SITL')
+        self.set_parameter("AHRS_EKF_TYPE", ekf_sitl)
         self.change_mode('QSTABILIZE')
         self.wait_ready_to_arm()
 
@@ -92,7 +99,7 @@ class AutoTestQuadPlane(AutoTest):
         """
 
         self.progress("Verify that SERVO5 is Motor1 (default)")
-        motor1_servo_function_lp = 33
+        motor1_servo_function_lp = self.get_function_code_from_name_and_description("SERVO1_FUNCTION", "Motor1")
         if (self.get_parameter('SERVO5_FUNCTION') != motor1_servo_function_lp):
             raise PreconditionFailedException("SERVO5_FUNCTION not %d" % motor1_servo_function_lp)
 
@@ -101,17 +108,20 @@ class AutoTestQuadPlane(AutoTest):
         if (self.get_parameter("FLTMODE_CH") != default_fltmode_ch):
             raise PreconditionFailedException("FLTMODE_CH not %d" % default_fltmode_ch)
 
-        """When disarmed, motor PWM will drop to min_pwm"""
+        """When disarmed, motor PWM should drop to min_pwm"""
         min_pwm = self.get_parameter("Q_THR_MIN_PWM")
 
-        self.progress("Verify Motor1 is ast min_pwm when disarmed")
+        self.progress("Verify Motor1 is at min_pwm when disarmed")
         self.wait_servo_channel_value(5, min_pwm, comparator=operator.eq)
 
         """set Q_OPTIONS bit AIRMODE"""
-        airmode_option_bit = (1<<9)
+        airmode_option_bitnumber = self.get_bitfield_number_from_description("Q_OPTIONS", "AirMode")
+        airmode_option_bit = (1 << airmode_option_bitnumber)
         self.set_parameter("Q_OPTIONS", airmode_option_bit)
 
-        armdisarm_option = 41
+        armdisarm_option = self.get_function_code_from_name_and_description('RC1_OPTION', 'ArmDisarm')
+        print(armdisarm_option)
+        #armdisarm_option = 41
         arm_ch = 8
         self.set_parameter("RC%d_OPTION" % arm_ch, armdisarm_option)
         self.progress("configured RC%d as ARMDISARM switch" % arm_ch)
