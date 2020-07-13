@@ -87,8 +87,7 @@ class AutoTestQuadPlane(AutoTest):
         Dynamics Model state directly from the physics engine instead of running
         an EKF to estimate it
         """
-        ekf_sitl = self.get_function_code_from_name_and_description('AHRS_EKF_TYPE', 'SITL')
-        self.set_parameter("AHRS_EKF_TYPE", ekf_sitl)
+        self.set_param_from_description('AHRS_EKF_TYPE', 'SITL')
         self.change_mode('QSTABILIZE')
         self.wait_ready_to_arm()
 
@@ -178,8 +177,7 @@ class AutoTestQuadPlane(AutoTest):
 
         self.start_subtest("verify that AIRMODE auxswitch turns airmode on/off while armed")
         """set  RC7_OPTION to AIRMODE"""
-        option_airmode = 84
-        self.set_parameter("RC7_OPTION", option_airmode)
+        self.set_param_from_description("RC7_OPTION", "Air Mode")
 
         for mode in ('QSTABILIZE', 'QACRO'):
             self.progress("Testing %s mode" % mode)
@@ -327,7 +325,8 @@ class AutoTestQuadPlane(AutoTest):
         self.wait_disarmed()
 
     def fly_home_land_and_disarm(self, timeout=30):
-        self.set_parameter("LAND_TYPE", 0)
+        self.set_param_from_description("LAND_TYPE", "Standard Glide Slope")
+#        self.set_parameter("LAND_TYPE", 0)
         filename = "flaps.txt"
         self.progress("Using %s to fly home" % filename)
         self.load_mission(filename)
@@ -438,9 +437,11 @@ class AutoTestQuadPlane(AutoTest):
             self.set_rc_default()
 
             # magic tridge EKF type that dramatically speeds up the test
-            self.set_parameter("AHRS_EKF_TYPE", 10)
+    #            self.set_parameter("AHRS_EKF_TYPE", 10)
+            self.set_param_from_description('AHRS_EKF_TYPE', 'SITL')
 
             self.set_parameter("INS_LOG_BAT_MASK", 3)
+            # clear all bits in INS_LOG_BAT_OPT
             self.set_parameter("INS_LOG_BAT_OPT", 0)
             self.set_parameter("INS_GYRO_FILTER", 100)
             self.set_parameter("LOG_BITMASK", 45054)
@@ -479,13 +480,15 @@ class AutoTestQuadPlane(AutoTest):
             freq = self.hover_and_check_matched_frequency(-15, 200, 300, 32)
 
             # Step 3: add a FFT dynamic notch and check that the peak is squashed
-            self.set_parameter("INS_LOG_BAT_OPT", 2)
+#            self.set_parameter("INS_LOG_BAT_OPT", 2)
+            self.set_bitfield_param("INS_LOG_BAT_OPT", "post-filter")
             self.set_parameter("INS_HNTCH_ENABLE", 1)
             self.set_parameter("INS_HNTCH_FREQ", freq)
             self.set_parameter("INS_HNTCH_REF", 1.0)
             self.set_parameter("INS_HNTCH_ATT", 50)
             self.set_parameter("INS_HNTCH_BW", freq/2)
-            self.set_parameter("INS_HNTCH_MODE", 4)
+    #            self.set_parameter("INS_HNTCH_MODE", 4)
+            self.set_param_from_description("INS_HNTCH_MODE", "Dynamic FFT")
             self.reboot_sitl()
 
             self.takeoff(10, mode="QHOVER")
@@ -553,7 +556,8 @@ class AutoTestQuadPlane(AutoTest):
 
     def test_pilot_yaw(self):
         self.takeoff(10, mode="QLOITER")
-        self.set_parameter("STICK_MIXING", 0)
+#        self.set_parameter("STICK_MIXING", 0)
+        self.set_param_from_description("STICK_MIXING", "Disabled")
         self.set_rc(4, 1700)
         for mode in "QLOITER", "QHOVER":
             self.wait_heading(45)
