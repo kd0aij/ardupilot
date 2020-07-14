@@ -372,21 +372,29 @@ void QuadPlane::tiltrotor_vectored_yaw(void)
     // output value (0 to 1) to get motors pointed straight up
     float zero_out = tilt.tilt_yaw_angle / total_angle;
 
-    // calculate the basic tilt amount from current_tilt
-    float base_output = zero_out + (tilt.current_tilt * (1 - zero_out));
-    
-    float tilt_threshold = (tilt.max_angle_deg/90.0f);
-    bool no_yaw = (tilt.current_tilt > tilt_threshold);
-    if (no_yaw) {
-        SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft,  1000 * base_output);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, 1000 * base_output);
-    } else {
-        float yaw_out = motors->get_yaw();
-        float yaw_range = zero_out;
+    float tilt_left = zero_out;
+    float tilt_right = zero_out;
 
-        SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft,  1000 * (base_output + yaw_out * yaw_range));
-        SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, 1000 * (base_output - yaw_out * yaw_range));
+    // in VTOL modes or if Motors 1 and 2 are used in forward flight, tilt
+    // them as required for current_tilt and yaw demand
+    if (in_vtol_mode() ||
+        (!in_vtol_mode() && (tilt.tilt_mask & 0b11))) {
+
+        // calculate the basic tilt amount from current_tilt
+        float base_output = zero_out + (tilt.current_tilt * (1 - zero_out));
+    
+        float tilt_threshold = (tilt.max_angle_deg/90.0f);
+        bool no_yaw = (tilt.current_tilt > tilt_threshold);
+        if (!no_yaw) {
+            float yaw_out = motors->get_yaw();
+            float yaw_range = zero_out;
+
+            tilt_left = base_output + yaw_out * yaw_range;
+            tilt_right = base_output - yaw_out * yaw_range;
+        }
     }
+    SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft,  1000 * tilt_left);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, 1000 * tilt_right);
 }
 
 /*
