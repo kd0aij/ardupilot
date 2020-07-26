@@ -39,6 +39,7 @@ public:
         QRTL          = 21,
         QAUTOTUNE     = 22,
         QACRO         = 23,
+        QSTABFWD      = 24,
     };
 
     // Constructor
@@ -339,6 +340,7 @@ class ModeQStabilize : public Mode
 {
 public:
 
+    friend class ModeQBoat;
     Number mode_number() const override { return Number::QSTABILIZE; }
     const char *name() const override { return "QSTABILIZE"; }
     const char *name4() const override { return "QSTB"; }
@@ -488,6 +490,24 @@ protected:
 
     bool takeoff_started;
     Location start_loc;
+
+    bool _enter() override;
+};
+
+class ModeQBoat : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::QSTABFWD; }
+    const char *name() const override { return "QSTABFWD"; }
+    const char *name4() const override { return "QFWD"; }
+
+    bool is_vtol_mode() const override { return true; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+protected:
 
     bool _enter() override;
 };

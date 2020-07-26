@@ -95,6 +95,7 @@ class AutoTestQuadPlane(AutoTest):
         for mode in modes:
             self.progress("Testing %s mode" % mode)
             self.change_mode(mode)
+            self.zero_throttle()
             self.arm_vehicle()
             self.progress("Raising throttle")
             self.set_rc(3, 1800)
@@ -114,6 +115,7 @@ class AutoTestQuadPlane(AutoTest):
         self.mavproxy.send('wp list\n')
         self.mavproxy.expect('Requesting [0-9]+ waypoints')
         self.wait_ready_to_arm()
+        self.zero_throttle()
         self.arm_vehicle()
         self.mavproxy.send('mode AUTO\n')
         self.wait_mode('AUTO')
@@ -123,6 +125,7 @@ class AutoTestQuadPlane(AutoTest):
         # wait for blood sample here
         self.mavproxy.send('wp set 20\n')
         self.wait_ready_to_arm()
+        self.zero_throttle()
         self.arm_vehicle()
         self.wait_waypoint(20, 34, max_dist=60, timeout=1200)
 
@@ -132,6 +135,7 @@ class AutoTestQuadPlane(AutoTest):
     def fly_qautotune(self):
         self.change_mode("QHOVER")
         self.wait_ready_to_arm()
+        self.zero_throttle()
         self.arm_vehicle()
         self.set_rc(3, 1800)
         self.wait_altitude(30,
@@ -166,8 +170,10 @@ class AutoTestQuadPlane(AutoTest):
         self.wait_disarmed()
 
     def takeoff(self, height, mode):
+        self.zero_throttle()
         self.change_mode(mode)
         self.wait_ready_to_arm()
+        self.zero_throttle()
         self.arm_vehicle()
         self.set_rc(3, 1800)
         self.wait_altitude(height,
@@ -367,7 +373,9 @@ class AutoTestQuadPlane(AutoTest):
             self.mavproxy.send('wp list\n')
             self.mavproxy.expect('Requesting [0-9]+ waypoints')
             self.wait_ready_to_arm()
+            self.zero_throttle()
             self.arm_vehicle()
+            self.set_rc(3, 1500)
             self.mavproxy.send('mode AUTO\n')
             self.wait_mode('AUTO')
             self.wait_waypoint(1, 7, max_dist=60, timeout=1200)

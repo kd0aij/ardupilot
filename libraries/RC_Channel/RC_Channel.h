@@ -397,8 +397,8 @@ public:
         return _options & uint32_t(Option::LOG_DATA);
     }
     
-    bool arming_check_throttle() const {
-        return _options & uint32_t(Option::ARMING_CHECK_THROTTLE);
+    bool arming_skip_check_throttle() const {
+        return _options & uint32_t(Option::ARMING_SKIP_CHECK_THR);
     }
 
     bool arming_skip_checks_rpy() const {
@@ -429,8 +429,8 @@ protected:
         IGNORE_FAILSAFE       = (1 << 2), // ignore RC failsafe bits
         FPORT_PAD             = (1 << 3), // pad fport telem output
         LOG_DATA              = (1 << 4), // log rc input bytes
-        ARMING_CHECK_THROTTLE = (1 << 5), // run an arming check for neutral throttle
-        ARMING_SKIP_CHECK_RPY = (1 << 6), // skip the an arming checks for the roll/pitch/yaw channels
+        ARMING_SKIP_CHECK_THR = (1 << 5), // skip the arming checks for neutral throttles
+        ARMING_SKIP_CHECK_RPY = (1 << 6), // skip the arming checks for the roll/pitch/yaw channels
         ALLOW_SWITCH_REV      = (1 << 7), // honor the reversed flag on switches
     };
 

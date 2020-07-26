@@ -1625,6 +1625,7 @@ class AutoTest(ABC):
         original_log_list = self.log_list()
         for i in range(0,10):
             self.wait_ready_to_arm()
+            self.zero_throttle()
             self.arm_vehicle()
             self.delay_sim_time(1)
             self.disarm_vehicle()
@@ -1948,6 +1949,7 @@ class AutoTest(ABC):
         pre_armed_list = self.log_list()
         if self.is_copter() or self.is_heli():
             self.set_parameter("DISARM_DELAY", 0)
+        self.zero_throttle()
         self.arm_vehicle()
         post_armed_list = self.log_list()
         if len(post_armed_list) != len(pre_armed_list):
@@ -1963,6 +1965,7 @@ class AutoTest(ABC):
         if len(post_disarmed_post_delay_list) != len(post_disarmed_list):
             raise NotAchievedException("Got log rotation when we shouldn't have")
         self.progress("Checking that arming does produce a new log")
+        self.zero_throttle()
         self.arm_vehicle()
         post_armed_list = self.log_list()
         if len(post_armed_list) - len(post_disarmed_post_delay_list) != 1:
@@ -2669,6 +2672,7 @@ class AutoTest(ABC):
             raise ValueError("Frame is none?")
         self.customise_SITL_commandline([])
         self.wait_ready_to_arm()
+        self.zero_throttle()
         self.arm_vehicle()
         self.progress("Sending enter-cpu-lockup")
         # when we're in CPU lockup we don't get SYSTEM_TIME messages,
@@ -2700,6 +2704,7 @@ class AutoTest(ABC):
         # get stopped/started at the end of the test
         self.customise_SITL_commandline([])
         self.wait_ready_to_arm()
+        self.zero_throttle()
         self.arm_vehicle()
         self.progress("Sending enter-cpu-lockup")
         # when we're in CPU lockup we don't get SYSTEM_TIME messages,
@@ -4758,6 +4763,7 @@ Also, ignores heartbeats not from our target system'''
                     self.set_parameter(_out, value)
             for count in range(compass_tnumber + 1, compass_count + 1):
                 self.set_parameter("COMPASS_ORIENT%d" % count, self.get_parameter("SIM_MAG%d_ORIENT" % count))
+            self.zero_throttle()
             self.arm_vehicle()
             self.progress("Test calibration rejection when armed")
             self.run_cmd(mavutil.mavlink.MAV_CMD_DO_START_MAG_CAL,
@@ -4906,6 +4912,7 @@ Also, ignores heartbeats not from our target system'''
             self.mavproxy.send("dataflash_logger set verbose 0\n")
             self.delay_sim_time(1)
             self.drain_mav() # hopefully draining COMMAND_ACK from that failed arm
+            self.zero_throttle()
             self.arm_vehicle()
             tstart = self.get_sim_time()
             last_status = 0
@@ -5917,6 +5924,7 @@ switch value'''
 
     def test_parameter_checks_poscontrol(self, param_prefix):
         self.wait_ready_to_arm()
+        self.zero_throttle()
         self.context_push()
         self.set_parameter("%s_POSXY_P" % param_prefix, -1)
         self.run_cmd(mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
