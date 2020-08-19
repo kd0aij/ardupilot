@@ -1,4 +1,5 @@
 #include "Copter.h"
+#include "AP_Motors/AP_MotorsGeneral.h"
 #include <AP_BLHeli/AP_BLHeli.h>
 
 /*****************************************************************************
@@ -515,8 +516,8 @@ void Copter::allocate_motors(void)
         case AP_Motors::MOTOR_FRAME_OCTAQUAD:
         case AP_Motors::MOTOR_FRAME_DODECAHEXA:
         default:
-            motors = new AP_MotorsMatrix(copter.scheduler.get_loop_rate_hz());
-            motors_var_info = AP_MotorsMatrix::var_info;
+            motors = new AP_MotorsGeneral(copter.scheduler.get_loop_rate_hz());
+            motors_var_info = AP_MotorsGeneral::var_info;
             break;
         case AP_Motors::MOTOR_FRAME_TRI:
             motors = new AP_MotorsTri(copter.scheduler.get_loop_rate_hz());
