@@ -83,6 +83,8 @@ void GCS_MAVLINK::handle_file_transfer_protocol(const mavlink_message_t &msg) {
             // dropping the message, no buffer space to queue it in
             // we could NACK it, but that can lead to GCS confusion, so we're treating it like lost data
         }
+    } else {
+        send_text(MAV_SEVERITY::MAV_SEVERITY_WARNING, "ftp_init failed");
     }
 }
 
