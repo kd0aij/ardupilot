@@ -989,7 +989,7 @@ void QuadPlane::check_attitude_relax(void)
 {
     uint32_t now = AP_HAL::millis();
     if (now - last_att_control_ms > 100) {
-        attitude_control->relax_attitude_controllers();
+        relax_attitude_control();
     }
     last_att_control_ms = now;
 }
@@ -1083,7 +1083,7 @@ void QuadPlane::control_qacro(void)
     if (throttle_wait) {
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
         attitude_control->set_throttle_out(0, true, 0);
-        attitude_control->relax_attitude_controllers();
+        relax_attitude_control();
     } else {
         check_attitude_relax();
 
@@ -1116,6 +1116,18 @@ void QuadPlane::control_qacro(void)
     }
 }
 
+void QuadPlane::relax_attitude_control(){
+    bool vectored_tailsitter = SRV_Channels::function_assigned(SRV_Channel::k_tiltMotorLeft) ||
+                               SRV_Channels::function_assigned(SRV_Channel::k_tiltMotorRight);
+    if (is_tailsitter() && vectored_tailsitter) {
+        // disable roll and yaw control for vectored tailsitters
+        attitude_control->relax_roll_and_yaw_controllers();
+    } else {
+        // if not a vectored tailsitter completely disable attitude control
+        attitude_control->relax_attitude_controllers();
+    }
+}
+
 /*
   control QHOVER mode
  */
@@ -1124,7 +1136,7 @@ void QuadPlane::control_hover(void)
     if (throttle_wait) {
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
         attitude_control->set_throttle_out(0, true, 0);
-        attitude_control->relax_attitude_controllers();
+        relax_attitude_control();
         pos_control->relax_alt_hold_controllers(0);
     } else {
         hold_hover(get_pilot_desired_climb_rate_cms());
@@ -1258,7 +1270,7 @@ void QuadPlane::control_loiter()
     if (throttle_wait) {
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
         attitude_control->set_throttle_out(0, true, 0);
-        attitude_control->relax_attitude_controllers();
+        relax_attitude_control();
         pos_control->relax_alt_hold_controllers(0);
         loiter_nav->clear_pilot_desired_acceleration();
         loiter_nav->init_target();

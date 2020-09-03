@@ -238,6 +238,8 @@ private:
     void control_qacro(void);
     void init_hover(void);
     void control_hover(void);
+    void relax_attitude_control();
+
 
     void init_loiter(void);
     void init_qland(void);
