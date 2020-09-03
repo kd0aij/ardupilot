@@ -172,6 +172,53 @@ void AC_AttitudeControl::relax_attitude_controllers()
     reset_rate_controller_I_terms();
 }
 
+// For tilt-vectored tailsitters only: relax roll and yaw rate controller outputs
+// leaving pitch controller active to let motors tilt up while in throttle_wait
+void AC_AttitudeControl::relax_roll_and_yaw_controllers()
+{
+    // Get the current attitude quaternion
+    Quaternion current_attitude;
+    _ahrs.get_quat_body_to_ned(current_attitude);
+
+    Vector3f current_eulers;
+    current_attitude.to_euler(current_eulers.x, current_eulers.y, current_eulers.z);
+
+    // set target attitude to zero pitch with (approximate) current roll and yaw
+    // by rotating the current_attitude quaternion by the error in desired pitch
+    Quaternion pitch_rotation;
+    pitch_rotation.from_axis_angle(Vector3f(0, -1, 0), current_eulers.y);
+    _attitude_target_quat = current_attitude * pitch_rotation;
+    _attitude_target_quat.normalize();
+    _attitude_target_quat.to_euler(_attitude_target_euler_angle.x, _attitude_target_euler_angle.y, _attitude_target_euler_angle.z);
+    _attitude_ang_error = current_attitude.inverse() * _attitude_target_quat;
+
+    // Initialize the roll and yaw angular rate variables to the current rate
+    _attitude_target_ang_vel = _ahrs.get_gyro();
+    ang_vel_to_euler_rate(_attitude_target_euler_angle, _attitude_target_ang_vel, _attitude_target_euler_rate);
+    _rate_target_ang_vel.x = _ahrs.get_gyro().x;
+    _rate_target_ang_vel.z = _ahrs.get_gyro().z;
+
+#define DEBUG 0
+#if DEBUG == 1
+    current_eulers *= RAD_TO_DEG;
+    ::printf("current_eulers: %f %f %f\n",
+            current_eulers.x, current_eulers.y, current_eulers.z);
+    Vector3f target_eulers;
+    _attitude_target_quat.to_euler(target_eulers.x, target_eulers.y, target_eulers.z);
+    target_eulers *= RAD_TO_DEG;
+    ::printf("target_eulers: %f %f %f\n",
+            target_eulers.x, target_eulers.y, target_eulers.z);
+    ::printf("_rate_target_ang_vel: %f, %f %f\n", 
+            _rate_target_ang_vel.x, _rate_target_ang_vel.y, _rate_target_ang_vel.z);
+    ::printf("_attitude_ang_error: %f %f %f %f\n", 
+            _attitude_ang_error.q1, _attitude_ang_error.q2, _attitude_ang_error.q3, _attitude_ang_error.q4);
+#endif
+
+    // Reset the roll and yaw I terms
+    get_rate_roll_pid().reset_I();
+    get_rate_yaw_pid().reset_I();
+}
+
 void AC_AttitudeControl::reset_rate_controller_I_terms()
 {
     get_rate_roll_pid().reset_I();
@@ -360,7 +407,8 @@ void AC_AttitudeControl::input_euler_rate_yaw_euler_angle_pitch_bf_roll(bool pla
     // Compute attitude error
     Quaternion attitude_vehicle_quat;
     Quaternion error_quat;
-    attitude_vehicle_quat.from_rotation_matrix(_ahrs.get_rotation_body_to_ned());
+    _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
+//    attitude_vehicle_quat.from_rotation_matrix(_ahrs.get_rotation_body_to_ned());
     error_quat = attitude_vehicle_quat.inverse() * _attitude_target_quat;
     Vector3f att_error;
     error_quat.to_axis_angle(att_error);
