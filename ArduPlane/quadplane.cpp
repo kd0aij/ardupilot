@@ -1271,7 +1271,8 @@ void QuadPlane::control_loiter()
         relax_attitude_control();
         pos_control->relax_alt_hold_controllers(0);
         loiter_nav->clear_pilot_desired_acceleration();
-        loiter_nav->init_target();
+        bool init_I_terms = !is_vectored_tailsitter();
+        loiter_nav->init_target(init_I_terms);
         return;
     }
 
@@ -1284,7 +1285,8 @@ void QuadPlane::control_loiter()
     const uint32_t now = AP_HAL::millis();
     if (now - last_loiter_ms > 500) {
         loiter_nav->clear_pilot_desired_acceleration();
-        loiter_nav->init_target();
+        bool init_I_terms = !is_vectored_tailsitter();
+        loiter_nav->init_target(init_I_terms);
     }
     last_loiter_ms = now;
 
@@ -1303,7 +1305,7 @@ void QuadPlane::control_loiter()
     // run loiter controller
     loiter_nav->update();
 
-    // nav roll and pitch are controller by loiter controller
+    // nav roll and pitch are controlled by loiter controller
     plane.nav_roll_cd = loiter_nav->get_roll();
     plane.nav_pitch_cd = loiter_nav->get_pitch();
 
