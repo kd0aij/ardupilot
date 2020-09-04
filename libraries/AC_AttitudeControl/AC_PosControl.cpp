@@ -823,7 +823,7 @@ float AC_PosControl::get_lean_angle_max_cd() const
 ///     sets target roll angle, pitch angle and I terms based on vehicle current lean angles
 ///     should be called once whenever significant changes to the position target are made
 ///     this does not update the xy target
-void AC_PosControl::init_xy_controller()
+void AC_PosControl::init_xy_controller(bool init_I_terms)
 {
     // set roll, pitch lean angle targets to current attitude
     // todo: this should probably be based on the desired attitude not the current attitude
@@ -832,8 +832,10 @@ void AC_PosControl::init_xy_controller()
 
     // initialise I terms from lean angles
     _pid_vel_xy.reset_filter();
-    lean_angles_to_accel(_accel_target.x, _accel_target.y);
-    _pid_vel_xy.set_integrator(_accel_target - _accel_desired);
+    if (init_I_terms) {
+        lean_angles_to_accel(_accel_target.x, _accel_target.y);
+        _pid_vel_xy.set_integrator(_accel_target - _accel_desired);
+    }
 
     // flag reset required in rate to accel step
     _flags.reset_desired_vel_to_pos = true;
