@@ -198,20 +198,17 @@ void AC_AttitudeControl::relax_roll_and_yaw_controllers()
     _rate_target_ang_vel.x = _ahrs.get_gyro().x;
     _rate_target_ang_vel.z = _ahrs.get_gyro().z;
 
-#define DEBUG 0
-#if DEBUG == 1
+#if 0
+    // log some debugging info
     current_eulers *= RAD_TO_DEG;
-    ::printf("current_eulers: %f %f %f\n",
-            current_eulers.x, current_eulers.y, current_eulers.z);
     Vector3f target_eulers;
     _attitude_target_quat.to_euler(target_eulers.x, target_eulers.y, target_eulers.z);
     target_eulers *= RAD_TO_DEG;
-    ::printf("target_eulers: %f %f %f\n",
-            target_eulers.x, target_eulers.y, target_eulers.z);
-    ::printf("_rate_target_ang_vel: %f, %f %f\n", 
-            _rate_target_ang_vel.x, _rate_target_ang_vel.y, _rate_target_ang_vel.z);
-    ::printf("_attitude_ang_error: %f %f %f %f\n", 
-            _attitude_ang_error.q1, _attitude_ang_error.q2, _attitude_ang_error.q3, _attitude_ang_error.q4);
+    AP::logger().Write("RLX", "TimeUS,cx,cy,cz,tx,ty,tz,pp,pi", "Qffffffff",
+            AP_HAL::micros64(),
+            current_eulers.x, current_eulers.y, current_eulers.z,
+            target_eulers.x, target_eulers.y, target_eulers.z,
+            get_rate_pitch_pid().get_p(), get_rate_pitch_pid().get_i());
 #endif
 
     // Reset the roll and yaw I terms
