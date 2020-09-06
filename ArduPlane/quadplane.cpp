@@ -1273,7 +1273,7 @@ void QuadPlane::control_loiter()
         relax_attitude_control();
         pos_control->relax_alt_hold_controllers(0);
         loiter_nav->clear_pilot_desired_acceleration();
-        bool init_I_terms = !is_vectored_tailsitter();
+        bool init_I_terms = !_is_vectored;
         loiter_nav->init_target(init_I_terms);
         return;
     }
@@ -1287,7 +1287,7 @@ void QuadPlane::control_loiter()
     const uint32_t now = AP_HAL::millis();
     if (now - last_loiter_ms > 500) {
         loiter_nav->clear_pilot_desired_acceleration();
-        bool init_I_terms = !is_vectored_tailsitter();
+        bool init_I_terms = !_is_vectored;
         loiter_nav->init_target(init_I_terms);
     }
     last_loiter_ms = now;
