@@ -1117,9 +1117,7 @@ void QuadPlane::control_qacro(void)
 }
 
 void QuadPlane::relax_attitude_control(){
-    bool vectored_tailsitter = SRV_Channels::function_assigned(SRV_Channel::k_tiltMotorLeft) ||
-                               SRV_Channels::function_assigned(SRV_Channel::k_tiltMotorRight);
-    if (is_tailsitter() && vectored_tailsitter) {
+    if (is_vectored_tailsitter()) {
         // disable roll and yaw control for vectored tailsitters
         attitude_control->relax_roll_and_yaw_controllers();
     } else {
@@ -1485,7 +1483,7 @@ float QuadPlane::desired_auto_yaw_rate_cds(void) const
  */
 bool QuadPlane::assistance_needed(float aspeed, bool have_airspeed)
 {
-    if (assist_speed <= 0 || is_contol_surface_tailsitter()) {
+    if (assist_speed <= 0 || is_control_surface_tailsitter()) {
         // assistance disabled
         in_angle_assist = false;
         angle_error_start_ms = 0;
