@@ -75,6 +75,7 @@ void QuadPlane::tailsitter_output(void)
 
     // handle forward flight modes and transition to VTOL modes
     if (!tailsitter_active() || in_tailsitter_vtol_transition()) {
+        AP::logger().Write("QPMO", "TimeUS,motors", "Qi", AP_HAL::micros64(), 7);
         // get FW controller throttle demand and mask of motors enabled during forward flight
         float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
         if (hal.util->get_soft_armed() && in_tailsitter_vtol_transition() && !throttle_wait && is_flying()) {
@@ -115,6 +116,7 @@ void QuadPlane::tailsitter_output(void)
     // the MultiCopter rate controller has already been run in an earlier call
     // to motors_output() from quadplane.update(), unless we are in assisted flight
     if (assisted_flight && tailsitter_transition_fw_complete()) {
+        AP::logger().Write("QPMO", "TimeUS,motors", "Qi", AP_HAL::micros64(), 8);
         hold_stabilize(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * 0.01f);
         motors_output(true);
 
@@ -133,6 +135,7 @@ void QuadPlane::tailsitter_output(void)
             return;
         }
     } else {
+        AP::logger().Write("QPMO", "TimeUS,motors", "Qi", AP_HAL::micros64(), 9);
         motors_output(false);
     }
 

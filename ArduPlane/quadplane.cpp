@@ -862,6 +862,7 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
                                                                                 plane.nav_roll_cd,
                                                                                 plane.nav_pitch_cd,
                                                                                 yaw_rate_cds);
+                AP::logger().Write("MCRU", "TimeUS,rmode", "Qi", AP_HAL::micros64(), 0);
                 return;
             } else {
                 // In plane input mode, the roll and yaw sticks are swapped
@@ -891,6 +892,7 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
                                                                                 p_roll_angle,
                                                                                 plane.nav_pitch_cd,
                                                                                 p_yaw_rate);
+                AP::logger().Write("MCRU", "TimeUS,rmode", "Qi", AP_HAL::micros64(), 1);
                 return;
             }
         }
@@ -899,6 +901,7 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
                                                                       plane.nav_pitch_cd,
                                                                       yaw_rate_cds);
+        AP::logger().Write("MCRU", "TimeUS,rmode", "Qi", AP_HAL::micros64(), 2);
     } else {
         // use the fixed wing desired rates
         float roll_rate = plane.rollController.get_pid_info().target;
@@ -906,8 +909,10 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
         if (is_tailsitter()) {
             // tailsitter roll and yaw swapped due to change in reference frame
             attitude_control->input_rate_bf_roll_pitch_yaw_2(yaw_rate_cds,pitch_rate*100.0f, -roll_rate*100.0f);
+            AP::logger().Write("MCRU", "TimeUS,rmode", "Qi", AP_HAL::micros64(), 3);
         } else {
             attitude_control->input_rate_bf_roll_pitch_yaw_2(roll_rate*100.0f, pitch_rate*100.0f, yaw_rate_cds);
+            AP::logger().Write("MCRU", "TimeUS,rmode", "Qi", AP_HAL::micros64(), 4);
         }
     }
 }
@@ -1758,6 +1763,7 @@ void QuadPlane::update_transition(void)
         plane.nav_pitch_cd = (pitch_cd > transition_initial_pitch)? transition_initial_pitch : pitch_cd;
         plane.nav_roll_cd = 0;
         check_attitude_relax();
+        AP::logger().Write("MCRU", "TimeUS,rmode", "Qi", AP_HAL::micros64(), 5);
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
                                                                       plane.nav_pitch_cd,
                                                                       0);
@@ -1777,6 +1783,7 @@ void QuadPlane::update_transition(void)
         }
         return;
     }
+    AP::logger().Write("QPMO", "TimeUS,motors", "Qi", AP_HAL::micros64(), 11);
 
     motors_output();
 }
@@ -1789,6 +1796,28 @@ void QuadPlane::update(void)
     if (!setup()) {
         return;
     }
+
+    const char *tstate;
+    switch(transition_state) {
+    case TRANSITION_AIRSPEED_WAIT:
+        tstate = "AIRSPEED_WAIT";
+        break;
+    case TRANSITION_TIMER:
+        tstate = "TIMER";
+        break;
+    case TRANSITION_ANGLE_WAIT_FW:
+        tstate = "ANGLE_WAIT_FW";
+        break;
+    case TRANSITION_ANGLE_WAIT_VTOL:
+        tstate = "ANGLE_WAIT_VTOL";
+        break;
+    case TRANSITION_DONE:
+        tstate = "DONE";
+        break;
+    }
+    char tstate16[16];
+    strncpy(tstate16, tstate, sizeof(tstate16));
+    AP::logger().Write("QPST", "TimeUS,tstate", "QN", AP_HAL::micros64(), tstate16);
 
     if ((ahrs_view != NULL) && !is_equal(_last_ahrs_trim_pitch, ahrs_trim_pitch.get())) {
         _last_ahrs_trim_pitch = ahrs_trim_pitch.get();
@@ -1834,6 +1863,7 @@ void QuadPlane::update(void)
         assisted_flight = false;
 
         // output to motors
+        AP::logger().Write("QPMO", "TimeUS,motors", "Qi", AP_HAL::micros64(), 10);
         motors_output();
 
         if (now - last_vtol_mode_ms > 1000 && is_tailsitter()) {
@@ -2006,8 +2036,10 @@ void QuadPlane::update_throttle_hover()
 void QuadPlane::motors_output(bool run_rate_controller)
 {
     if (run_rate_controller) {
+        AP::logger().Write("MCRR", "TimeUS,rate", "Qi", AP_HAL::micros64(), -1);
         attitude_control->rate_controller_run();
     }
+    AP::logger().Write("QPMO", "TimeUS,motors", "Qi", AP_HAL::micros64(), 6);
 
     /* Delay for ARMING_DELAY_MS after arming before allowing props to spin:
        1) for safety (OPTION_DELAY_ARMING)
