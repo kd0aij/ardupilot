@@ -45,6 +45,43 @@ public:
         MOTOR_FRAME_DODECAHEXA = 12,
         MOTOR_FRAME_HELI_QUAD = 13,
     };
+    
+    // return string corresponding to frame_class
+    const char* get_frame_string(motor_frame_class frame_class)
+    {
+        switch (frame_class) {
+            case AP_Motors::MOTOR_FRAME_QUAD:
+                return "QUAD";
+            case AP_Motors::MOTOR_FRAME_HEXA:
+                return "HEXA";
+            case AP_Motors::MOTOR_FRAME_Y6:
+                return "Y6";
+            case AP_Motors::MOTOR_FRAME_OCTA:
+                return "OCTA";
+            case AP_Motors::MOTOR_FRAME_OCTAQUAD:
+                return "OCTA_QUAD";
+            case AP_Motors::MOTOR_FRAME_HELI:
+                return "HELI";
+            case AP_Motors::MOTOR_FRAME_HELI_DUAL:
+                return "HELI_DUAL";
+            case AP_Motors::MOTOR_FRAME_HELI_QUAD:
+                return "HELI_QUAD";
+            case AP_Motors::MOTOR_FRAME_TRI:
+                return "TRI";
+            case AP_Motors::MOTOR_FRAME_SINGLE:
+                return "SINGLE";
+            case AP_Motors::MOTOR_FRAME_COAX:
+                return "COAX";
+            case AP_Motors::MOTOR_FRAME_TAILSITTER:
+                return "TAILSITTER";
+            case AP_Motors::MOTOR_FRAME_DODECAHEXA:
+                return "DODECA_HEXA";
+            case AP_Motors::MOTOR_FRAME_UNDEFINED:
+            default:
+                return "UNKNOWN";
+        }
+    };
+
     enum motor_frame_type {
         MOTOR_FRAME_TYPE_PLUS = 0,
         MOTOR_FRAME_TYPE_X = 1,
@@ -62,6 +99,47 @@ public:
         MOTOR_FRAME_TYPE_NYT_PLUS = 16, // plus frame, no differential torque for yaw
         MOTOR_FRAME_TYPE_NYT_X = 17, // X frame, no differential torque for yaw
         MOTOR_FRAME_TYPE_BF_X_REV = 18, // X frame, betaflight ordering, reversed motors
+    };
+
+    // return string corresponding to frame_type
+    const char* get_type_string(motor_frame_type frame_type)
+    {
+        switch(frame_type) {
+            case MOTOR_FRAME_TYPE_PLUS:
+                return "MOTOR_FRAME_TYPE_PLUS";
+            case MOTOR_FRAME_TYPE_X:
+                return "MOTOR_FRAME_TYPE_X";
+            case MOTOR_FRAME_TYPE_V:
+                return "MOTOR_FRAME_TYPE_V";
+            case MOTOR_FRAME_TYPE_H:
+                return "MOTOR_FRAME_TYPE_H";
+            case MOTOR_FRAME_TYPE_VTAIL:
+                return "MOTOR_FRAME_TYPE_VTAIL";
+            case MOTOR_FRAME_TYPE_ATAIL:
+                return "MOTOR_FRAME_TYPE_ATAIL";
+            case MOTOR_FRAME_TYPE_PLUSREV:
+                return "MOTOR_FRAME_TYPE_PLUSREV";
+            case MOTOR_FRAME_TYPE_Y6B:
+                return "MOTOR_FRAME_TYPE_Y6B";
+            case MOTOR_FRAME_TYPE_Y6F:
+                return "MOTOR_FRAME_TYPE_Y6F";
+            case MOTOR_FRAME_TYPE_BF_X:
+                return "MOTOR_FRAME_TYPE_BF_X";
+            case MOTOR_FRAME_TYPE_DJI_X:
+                return "MOTOR_FRAME_TYPE_DJI_X";
+            case MOTOR_FRAME_TYPE_CW_X:
+                return "MOTOR_FRAME_TYPE_CW_X";
+            case MOTOR_FRAME_TYPE_I:
+                return "MOTOR_FRAME_TYPE_I";
+            case MOTOR_FRAME_TYPE_NYT_PLUS:
+                return "MOTOR_FRAME_TYPE_NYT_PLUS";
+            case MOTOR_FRAME_TYPE_NYT_X:
+                return "MOTOR_FRAME_TYPE_NYT_X";
+            case MOTOR_FRAME_TYPE_BF_X_REV:
+                return "MOTOR_FRAME_TYPE_BF_X_REV";
+            default:
+                return "UNKNOWN";
+        }
     };
 
     // Constructor
