@@ -21,7 +21,7 @@
 extern const AP_HAL::HAL& hal;
 
 // init
-void AP_MotorsSingle::init(motor_frame_class frame_class, motor_frame_type frame_type)
+void AP_MotorsSingle::init(FRAME frame_class, motor_frame_type frame_type)
 {
     // make sure 6 output channels are mapped
     for (uint8_t i = 0; i < 6; i++) {
@@ -38,11 +38,11 @@ void AP_MotorsSingle::init(motor_frame_class frame_class, motor_frame_type frame
     }
 
     // record successful initialisation if what we setup was the desired frame_class
-    set_initialised_ok(frame_class == MOTOR_FRAME_SINGLE);
+    set_initialised_ok(frame_class == FRAME::SINGLE);
 }
 
 // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-void AP_MotorsSingle::set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type)
+void AP_MotorsSingle::set_frame_class_and_type(FRAME frame_class, motor_frame_type frame_type)
 {
     // nothing to do
 }

@@ -5,6 +5,7 @@
 #include <AP_Notify/AP_Notify.h>      // Notify library
 #include <SRV_Channel/SRV_Channel.h>
 #include <Filter/Filter.h>         // filter library
+#include "frame_class_values.h"
 
 // offsets for motors in motor_out and _motor_filtered arrays
 #define AP_MOTORS_MOT_1 0U
@@ -29,22 +30,39 @@
 class AP_Motors {
 public:
 
-    enum motor_frame_class {
-        MOTOR_FRAME_UNDEFINED = 0,
-        MOTOR_FRAME_QUAD = 1,
-        MOTOR_FRAME_HEXA = 2,
-        MOTOR_FRAME_OCTA = 3,
-        MOTOR_FRAME_OCTAQUAD = 4,
-        MOTOR_FRAME_Y6 = 5,
-        MOTOR_FRAME_HELI = 6,
-        MOTOR_FRAME_TRI = 7,
-        MOTOR_FRAME_SINGLE = 8,
-        MOTOR_FRAME_COAX = 9,
-        MOTOR_FRAME_TAILSITTER = 10,
-        MOTOR_FRAME_HELI_DUAL = 11,
-        MOTOR_FRAME_DODECAHEXA = 12,
-        MOTOR_FRAME_HELI_QUAD = 13,
+    // Create the frame class enum (FRAME) from frame_class_values.h.
+    // Also use frame_class_decl.h to create an array of string values
+    // and a virtual method to retrieve the string equivalent for a FRAME value.
+#undef DECL_ENUM_ELEMENT
+#define DECL_ENUM_ELEMENT( element ) element
+    enum class FRAME : uint8_t {
+        FRAME_CLASS_VALUES,
+        NFRAMES
     };
+
+#undef DECL_ENUM_ELEMENT
+#define DECL_ENUM_ELEMENT( element ) #element
+    const char* frame_class_string_base [(int)FRAME::NFRAMES] =
+    {
+        FRAME_CLASS_VALUES
+    };
+    virtual const char* get_frame_string(FRAME index)
+    {
+        if ((uint8_t)index < (uint8_t)FRAME::NFRAMES) {
+            return frame_class_string_base[(int)index];
+        } else {
+            return "INVALID";
+        }
+    }
+
+    void list_supported_frame_classes() {
+        for (int i=0; i<(int)FRAME::NFRAMES; i++) {
+            const char* frame_string = get_frame_string((FRAME)i);
+            if (!strcmp(frame_string, "INVALID")) break;
+            AP_HAL::get_HAL().console->printf("frame class %d: %s\n", i, frame_string);
+        }
+    }
+
     enum motor_frame_type {
         MOTOR_FRAME_TYPE_PLUS = 0,
         MOTOR_FRAME_TYPE_X = 1,
@@ -156,10 +174,10 @@ public:
     virtual void        set_update_rate( uint16_t speed_hz ) { _speed_hz = speed_hz; }
 
     // init
-    virtual void        init(motor_frame_class frame_class, motor_frame_type frame_type) = 0;
+    virtual void        init(FRAME frame_class, motor_frame_type frame_type) = 0;
 
     // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-    virtual void        set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type) = 0;
+    virtual void        set_frame_class_and_type(FRAME frame_class, motor_frame_type frame_type) = 0;
 
     // output - sends commands to the motors
     virtual void        output() = 0;
