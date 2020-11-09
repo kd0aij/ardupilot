@@ -27,7 +27,7 @@
 bool QuadPlane::is_tailsitter(void) const
 {
     return available()
-        && ((frame_class == AP_Motors::MOTOR_FRAME_TAILSITTER) || (tailsitter.motor_mask != 0))
+        && ((frame_class == (uint8_t)AP_Motors::FRAME::TAILSITTER) || (tailsitter.motor_mask != 0))
         && (tilt.tilt_type != TILT_TYPE_BICOPTER);
 }
 
@@ -36,7 +36,7 @@ bool QuadPlane::is_tailsitter(void) const
  */
 bool QuadPlane::is_contol_surface_tailsitter(void) const
 {
-    return frame_class == AP_Motors::MOTOR_FRAME_TAILSITTER
+    return frame_class == (uint8_t)AP_Motors::FRAME::TAILSITTER
            && ( is_zero(tailsitter.vectored_hover_gain) || !SRV_Channels::function_assigned(SRV_Channel::k_tiltMotorLeft));
 }
 
