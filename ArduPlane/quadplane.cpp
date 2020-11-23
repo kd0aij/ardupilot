@@ -773,7 +773,8 @@ bool QuadPlane::setup(void)
     // param count will have changed
     AP_Param::invalidate_count();
 
-    motors->list_supported_frame_classes();
+    // TODO: delete me
+    MotorFrame::list_all_classes();
 
     gcs().send_text(MAV_SEVERITY_INFO, "QuadPlane initialised");
     initialised = true;
