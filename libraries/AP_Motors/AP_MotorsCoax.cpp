@@ -16,7 +16,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include "AP_MotorsCoax.h"
-#include "FrameClass_Sub.h"
+#include "MotorFrame_Sub.h"
 #include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;

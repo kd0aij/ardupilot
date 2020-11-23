@@ -5,7 +5,7 @@
 #include <AP_Notify/AP_Notify.h>      // Notify library
 #include <SRV_Channel/SRV_Channel.h>
 #include <Filter/Filter.h>         // filter library
-#include "FrameClass.h"
+#include "MotorFrame.h"
 
 // offsets for motors in motor_out and _motor_filtered arrays
 #define AP_MOTORS_MOT_1 0U
