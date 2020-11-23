@@ -180,11 +180,11 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
             return false;
         }
 
-        AP_Motors::MotorFrame::CLASS frame_class, = (AP_Motors::FRAME)copter.g2.frame_class.get();
+        MotorFrame::CLASS frame_class = (MotorFrame::CLASS)copter.g2.frame_class.get();
         #if FRAME_CONFIG == HELI_FRAME
-        if (frame_class != AP_Motors::FRAME::HELI_QUAD &&
-            frame_class != AP_Motors::FRAME::HELI_DUAL &&
-            frame_class != AP_Motors::FRAME::HELI) {
+        if (frame_class != MotorFrame::CLASS::HELI_QUAD &&
+            frame_class != MotorFrame::CLASS::HELI_DUAL &&
+            frame_class != MotorFrame::CLASS::HELI) {
             check_failed(ARMING_CHECK_PARAMETERS, display_failure, "Invalid Heli FRAME_CLASS");
             return false;
         }
@@ -203,7 +203,7 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
         }
 
         // Inverted flight feature disabled for Heli Single and Dual frames
-        if (frame_class != AP_Motors::FRAME::HELI_QUAD &&
+        if (frame_class != MotorFrame::CLASS::HELI_QUAD &&
             rc().find_channel_for_option(RC_Channel::aux_func_t::INVERTED) != nullptr) {
             check_failed(ARMING_CHECK_PARAMETERS, display_failure, "Inverted flight option not supported");
             return false;
@@ -215,9 +215,9 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
         }
 
         #else
-        if (frame_class == AP_Motors::FRAME::HELI_QUAD ||
-            frame_class == AP_Motors::FRAME::HELI_DUAL ||
-            frame_class == AP_Motors::FRAME::HELI) {
+        if (frame_class == MotorFrame::CLASS::HELI_QUAD ||
+            frame_class == MotorFrame::CLASS::HELI_DUAL ||
+            frame_class == MotorFrame::CLASS::HELI) {
             check_failed(ARMING_CHECK_PARAMETERS, display_failure, "Invalid MultiCopter FRAME_CLASS");
             return false;
         }

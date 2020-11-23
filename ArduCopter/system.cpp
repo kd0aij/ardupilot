@@ -451,28 +451,28 @@ bool Copter::should_log(uint32_t mask)
 // return MAV_TYPE corresponding to frame class
 MAV_TYPE Copter::get_frame_mav_type()
 {
-    switch ((AP_Motors::FRAME)g2.frame_class.get()) {
-        case AP_Motors::FRAME::QUAD:
-        case AP_Motors::FRAME::UNDEFINED:
-        case AP_Motors::FRAME::NFRAMES:
+    switch ((MotorFrame::CLASS)g2.frame_class.get()) {
+        case MotorFrame::CLASS::QUAD:
+        case MotorFrame::CLASS::UNDEFINED:
+        case MotorFrame::CLASS::NFRAMES:
             return MAV_TYPE_QUADROTOR;
-        case AP_Motors::FRAME::HEXA:
-        case AP_Motors::FRAME::Y6:
+        case MotorFrame::CLASS::HEXA:
+        case MotorFrame::CLASS::Y6:
             return MAV_TYPE_HEXAROTOR;
-        case AP_Motors::FRAME::OCTA:
-        case AP_Motors::FRAME::OCTAQUAD:
+        case MotorFrame::CLASS::OCTA:
+        case MotorFrame::CLASS::OCTAQUAD:
             return MAV_TYPE_OCTOROTOR;
-        case AP_Motors::FRAME::HELI:
-        case AP_Motors::FRAME::HELI_DUAL:
-        case AP_Motors::FRAME::HELI_QUAD:
+        case MotorFrame::CLASS::HELI:
+        case MotorFrame::CLASS::HELI_DUAL:
+        case MotorFrame::CLASS::HELI_QUAD:
             return MAV_TYPE_HELICOPTER;
-        case AP_Motors::FRAME::TRI:
+        case MotorFrame::CLASS::TRI:
             return MAV_TYPE_TRICOPTER;
-        case AP_Motors::FRAME::SINGLE:
-        case AP_Motors::FRAME::COAX:
-        case AP_Motors::FRAME::TAILSITTER:
+        case MotorFrame::CLASS::SINGLE:
+        case MotorFrame::CLASS::COAX:
+        case MotorFrame::CLASS::TAILSITTER:
             return MAV_TYPE_COAXIAL;
-        case AP_Motors::FRAME::DODECAHEXA:
+        case MotorFrame::CLASS::DODECAHEXA:
             return MAV_TYPE_DODECAROTOR;
     }
     // unknown frame so return generic
@@ -482,34 +482,34 @@ MAV_TYPE Copter::get_frame_mav_type()
 // return string corresponding to frame_class
 const char* Copter::get_frame_string()
 {
-    switch ((AP_Motors::FRAME)g2.frame_class.get()) {
-        case AP_Motors::FRAME::QUAD:
+    switch ((MotorFrame::CLASS)g2.frame_class.get()) {
+        case MotorFrame::CLASS::QUAD:
             return "QUAD";
-        case AP_Motors::FRAME::HEXA:
+        case MotorFrame::CLASS::HEXA:
             return "HEXA";
-        case AP_Motors::FRAME::Y6:
+        case MotorFrame::CLASS::Y6:
             return "Y6";
-        case AP_Motors::FRAME::OCTA:
+        case MotorFrame::CLASS::OCTA:
             return "OCTA";
-        case AP_Motors::FRAME::OCTAQUAD:
+        case MotorFrame::CLASS::OCTAQUAD:
             return "OCTA_QUAD";
-        case AP_Motors::FRAME::HELI:
+        case MotorFrame::CLASS::HELI:
             return "HELI";
-        case AP_Motors::FRAME::HELI_DUAL:
+        case MotorFrame::CLASS::HELI_DUAL:
             return "HELI_DUAL";
-        case AP_Motors::FRAME::HELI_QUAD:
+        case MotorFrame::CLASS::HELI_QUAD:
             return "HELI_QUAD";
-        case AP_Motors::FRAME::TRI:
+        case MotorFrame::CLASS::TRI:
             return "TRI";
-        case AP_Motors::FRAME::SINGLE:
+        case MotorFrame::CLASS::SINGLE:
             return "SINGLE";
-        case AP_Motors::FRAME::COAX:
+        case MotorFrame::CLASS::COAX:
             return "COAX";
-        case AP_Motors::FRAME::TAILSITTER:
+        case MotorFrame::CLASS::TAILSITTER:
             return "TAILSITTER";
-        case AP_Motors::FRAME::DODECAHEXA:
+        case MotorFrame::CLASS::DODECAHEXA:
             return "DODECA_HEXA";
-        case AP_Motors::FRAME::UNDEFINED:
+        case MotorFrame::CLASS::UNDEFINED:
         default:
             return "UNKNOWN";
     }
@@ -520,49 +520,49 @@ const char* Copter::get_frame_string()
  */
 void Copter::allocate_motors(void)
 {
-    switch ((AP_Motors::FRAME)g2.frame_class.get()) {
+    switch ((MotorFrame::CLASS)g2.frame_class.get()) {
 #if FRAME_CONFIG != HELI_FRAME
-        case AP_Motors::FRAME::QUAD:
-        case AP_Motors::FRAME::HEXA:
-        case AP_Motors::FRAME::Y6:
-        case AP_Motors::FRAME::OCTA:
-        case AP_Motors::FRAME::OCTAQUAD:
-        case AP_Motors::FRAME::DODECAHEXA:
+        case MotorFrame::CLASS::QUAD:
+        case MotorFrame::CLASS::HEXA:
+        case MotorFrame::CLASS::Y6:
+        case MotorFrame::CLASS::OCTA:
+        case MotorFrame::CLASS::OCTAQUAD:
+        case MotorFrame::CLASS::DODECAHEXA:
         default:
             motors = new AP_MotorsMatrix(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsMatrix::var_info;
             break;
-        case AP_Motors::FRAME::TRI:
+        case MotorFrame::CLASS::TRI:
             motors = new AP_MotorsTri(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsTri::var_info;
             AP_Param::set_frame_type_flags(AP_PARAM_FRAME_TRICOPTER);
             break;
-        case AP_Motors::FRAME::SINGLE:
+        case MotorFrame::CLASS::SINGLE:
             motors = new AP_MotorsSingle(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsSingle::var_info;
             break;
-        case AP_Motors::FRAME::COAX:
+        case MotorFrame::CLASS::COAX:
             motors = new AP_MotorsCoax(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsCoax::var_info;
             break;
-        case AP_Motors::FRAME::TAILSITTER:
+        case MotorFrame::CLASS::TAILSITTER:
             motors = new AP_MotorsTailsitter(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsTailsitter::var_info;
             break;
 #else // FRAME_CONFIG == HELI_FRAME
-        case AP_Motors::FRAME::HELI_DUAL:
+        case MotorFrame::CLASS::HELI_DUAL:
             motors = new AP_MotorsHeli_Dual(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsHeli_Dual::var_info;
             AP_Param::set_frame_type_flags(AP_PARAM_FRAME_HELI);
             break;
 
-        case AP_Motors::FRAME::HELI_QUAD:
+        case MotorFrame::CLASS::HELI_QUAD:
             motors = new AP_MotorsHeli_Quad(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsHeli_Quad::var_info;
             AP_Param::set_frame_type_flags(AP_PARAM_FRAME_HELI);
             break;
             
-        case AP_Motors::FRAME::HELI:
+        case MotorFrame::CLASS::HELI:
         default:
             motors = new AP_MotorsHeli_Single(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsHeli_Single::var_info;
@@ -628,8 +628,8 @@ void Copter::allocate_motors(void)
     AP_Param::reload_defaults_file(true);
     
     // now setup some frame-class specific defaults
-    switch ((AP_Motors::FRAME)g2.frame_class.get()) {
-    case AP_Motors::FRAME::Y6:
+    switch ((MotorFrame::CLASS)g2.frame_class.get()) {
+    case MotorFrame::CLASS::Y6:
         attitude_control->get_rate_roll_pid().kP().set_default(0.1);
         attitude_control->get_rate_roll_pid().kD().set_default(0.006);
         attitude_control->get_rate_pitch_pid().kP().set_default(0.1);
@@ -637,7 +637,7 @@ void Copter::allocate_motors(void)
         attitude_control->get_rate_yaw_pid().kP().set_default(0.15);
         attitude_control->get_rate_yaw_pid().kI().set_default(0.015);
         break;
-    case AP_Motors::FRAME::TRI:
+    case MotorFrame::CLASS::TRI:
         attitude_control->get_rate_yaw_pid().filt_D_hz().set_default(100);
         break;
     default:

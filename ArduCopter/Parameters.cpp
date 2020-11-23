@@ -29,10 +29,10 @@
 #define GOBJECTN(v, pname, name, class) { AP_PARAM_GROUP, name, Parameters::k_param_ ## pname, (const void *)&copter.v, {group_info : class::var_info} }
 
 #if FRAME_CONFIG == HELI_FRAME
-// 6 here is AP_Motors::FRAME::HELI
-#define DEFAULT_FRAME_CLASS (uint8_t)AP_Motors::FRAME::HELI
+// 6 here is MotorFrame::CLASS::HELI
+#define DEFAULT_FRAME_CLASS (uint8_t)MotorFrame::CLASS::HELI
 #else
-#define DEFAULT_FRAME_CLASS (uint8_t)AP_Motors::FRAME::UNDEFINED
+#define DEFAULT_FRAME_CLASS (uint8_t)MotorFrame::CLASS::UNDEFINED
 #endif
 
 const AP_Param::Info Copter::var_info[] = {
@@ -1376,7 +1376,7 @@ void Copter::convert_lgr_parameters(void)
 // handle conversion of tradheli parameters from Copter-3.6 to Copter-3.7
 void Copter::convert_tradheli_parameters(void)
 {
-    if (g2.frame_class.get() == (uint8_t)AP_Motors::FRAME::HELI) {
+    if (g2.frame_class.get() == (uint8_t)MotorFrame::CLASS::HELI) {
         // single heli conversion info
         const AP_Param::ConversionInfo singleheli_conversion_info[] = {
             { Parameters::k_param_motors, 1, AP_PARAM_INT16, "H_SW_H3_SV1_POS" },
@@ -1423,7 +1423,7 @@ void Copter::convert_tradheli_parameters(void)
                 }
             }
         }
-    } else if (g2.frame_class.get() == (uint8_t)AP_Motors::FRAME::HELI_DUAL) {
+    } else if (g2.frame_class.get() == (uint8_t)MotorFrame::CLASS::HELI_DUAL) {
         // dual heli conversion info
         const AP_Param::ConversionInfo dualheli_conversion_info[] = {
             { Parameters::k_param_motors, 1, AP_PARAM_INT16, "H_SW_H3_SV1_POS" },
