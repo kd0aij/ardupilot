@@ -1,8 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+#include <string.h>
+#include <stdio.h>
 #include "FrameClass_Sub.h"
 
 #undef DECL_ENUM_ELEMENT
@@ -11,6 +8,7 @@ const char* MotorFrame_Sub::class_string_sub [(int)MotorFrame_Sub::CLASS::NFRAME
 {
     FRAME_CLASS_SUB_VALUES
 };
+
 const char* MotorFrame_Sub::get_class_string(MotorFrame_Sub::CLASS index)
 {
     if ((uint8_t)index < (uint8_t)MotorFrame_Sub::CLASS::NFRAMES) {
@@ -19,3 +17,12 @@ const char* MotorFrame_Sub::get_class_string(MotorFrame_Sub::CLASS index)
         return "INVALID";
     }
 }
+
+void MotorFrame_Sub::list_all_classes() {
+    for (int i=0; i<(int)CLASS::NFRAMES; i++) {
+        const char* frame_string = get_class_string((CLASS)i);
+        if (!strcmp(frame_string, "INVALID")) break;
+        ::printf("class %d: %s\n", i, frame_string);
+    }
+}
+

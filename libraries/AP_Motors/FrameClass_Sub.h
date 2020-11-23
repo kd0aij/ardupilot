@@ -1,16 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   FrameClass_Sub.h
- * Author: markw
- *
- * Created on November 22, 2020, 12:33 PM
- */
-
 #pragma once
 
 #include <stdint.h>
@@ -30,4 +17,5 @@ public:
 
     static const char* class_string_sub [(int)CLASS::NFRAMES];
     static const char* get_class_string(CLASS index);
+    static void list_all_classes();
 };

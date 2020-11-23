@@ -30,14 +30,6 @@
 class AP_Motors {
 public:
 
-    void list_supported_frame_classes() {
-        for (int i=0; i<(int)MotorFrame::CLASS::NFRAMES; i++) {
-            const char* frame_string = MotorFrame::get_class_string((MotorFrame::CLASS)i);
-            if (!strcmp(frame_string, "INVALID")) break;
-            AP_HAL::get_HAL().console->printf("frame class %d: %s\n", i, frame_string);
-        }
-    }
-
     enum motor_frame_type {
         MOTOR_FRAME_TYPE_PLUS = 0,
         MOTOR_FRAME_TYPE_X = 1,
