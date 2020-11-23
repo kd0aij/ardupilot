@@ -180,7 +180,7 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
             return false;
         }
 
-        AP_Motors::FRAME frame_class = (AP_Motors::FRAME)copter.g2.frame_class.get();
+        AP_Motors::MotorFrame::CLASS frame_class, = (AP_Motors::FRAME)copter.g2.frame_class.get();
         #if FRAME_CONFIG == HELI_FRAME
         if (frame_class != AP_Motors::FRAME::HELI_QUAD &&
             frame_class != AP_Motors::FRAME::HELI_DUAL &&
