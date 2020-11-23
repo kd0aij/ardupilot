@@ -21,7 +21,7 @@
 extern const AP_HAL::HAL& hal;
 
 // init
-void AP_MotorsTri::init(FRAME frame_class, motor_frame_type frame_type)
+void AP_MotorsTri::init(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     add_motor_num(AP_MOTORS_MOT_1);
     add_motor_num(AP_MOTORS_MOT_2);
@@ -55,11 +55,11 @@ void AP_MotorsTri::init(FRAME frame_class, motor_frame_type frame_type)
     }
 
     // record successful initialisation if what we setup was the desired frame_class
-    set_initialised_ok(frame_class == FRAME::TRI);
+    set_initialised_ok(frame_class == MotorFrame::CLASS::TRI);
 }
 
 // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-void AP_MotorsTri::set_frame_class_and_type(FRAME frame_class, motor_frame_type frame_type)
+void AP_MotorsTri::set_frame_class_and_type(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     // check for reverse tricopter
     if (frame_type == MOTOR_FRAME_TYPE_PLUSREV) {
@@ -68,7 +68,7 @@ void AP_MotorsTri::set_frame_class_and_type(FRAME frame_class, motor_frame_type 
         _pitch_reversed = false;
     }
 
-    set_initialised_ok((frame_class == FRAME::TRI) && SRV_Channels::function_assigned(SRV_Channel::k_motor7));
+    set_initialised_ok((frame_class == MotorFrame::CLASS::TRI) && SRV_Channels::function_assigned(SRV_Channel::k_motor7));
 }
 
 // set update rate to motors - a value in hertz

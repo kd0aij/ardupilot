@@ -16,12 +16,13 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include "AP_MotorsCoax.h"
+#include "FrameClass_Sub.h"
 #include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
 // init
-void AP_MotorsCoax::init(FRAME frame_class, motor_frame_type frame_type)
+void AP_MotorsCoax::init(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     // make sure 6 output channels are mapped
     for (uint8_t i = 0; i < 6; i++) {
@@ -38,13 +39,13 @@ void AP_MotorsCoax::init(FRAME frame_class, motor_frame_type frame_type)
     }
 
     // record successful initialisation if what we setup was the desired frame_class
-    set_initialised_ok(frame_class == FRAME::COAX);
+    set_initialised_ok(frame_class == MotorFrame::CLASS::COAX);
 }
 
 // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-void AP_MotorsCoax::set_frame_class_and_type(FRAME frame_class, motor_frame_type frame_type)
+void AP_MotorsCoax::set_frame_class_and_type(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
-    set_initialised_ok(frame_class == FRAME::COAX);
+    set_initialised_ok(frame_class == MotorFrame::CLASS::COAX);
 }
 
 // set update rate to motors - a value in hertz

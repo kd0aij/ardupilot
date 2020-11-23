@@ -3,18 +3,19 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+#include "FrameClass_Sub.h"
 
 #undef DECL_ENUM_ELEMENT
 #define DECL_ENUM_ELEMENT( element ) #element
-    const char* FrameClass::frame_class_string_base [(int)FRAME::NFRAMES] =
-    {
-        FRAME_CLASS_VALUES
-    };
-    virtual const char* FrameClass::get_frame_string(FRAME index)
-    {
-        if ((uint8_t)index < (uint8_t)FRAME::NFRAMES) {
-            return frame_class_string_base[(int)index];
-        } else {
-            return "INVALID";
-        }
+const char* MotorFrame_Sub::class_string_sub [(int)MotorFrame_Sub::CLASS::NFRAMES] =
+{
+    FRAME_CLASS_SUB_VALUES
+};
+const char* MotorFrame_Sub::get_class_string(MotorFrame_Sub::CLASS index)
+{
+    if ((uint8_t)index < (uint8_t)MotorFrame_Sub::CLASS::NFRAMES) {
+        return class_string_sub[(int)index];
+    } else {
+        return "INVALID";
     }
+}

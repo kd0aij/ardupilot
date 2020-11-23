@@ -20,7 +20,7 @@
 extern const AP_HAL::HAL& hal;
 
 // init
-void AP_MotorsMatrix::init(FRAME frame_class, motor_frame_type frame_type)
+void AP_MotorsMatrix::init(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     // record requested frame class and type
     _last_frame_class = frame_class;
@@ -49,7 +49,7 @@ void AP_MotorsMatrix::set_update_rate(uint16_t speed_hz)
 }
 
 // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-void AP_MotorsMatrix::set_frame_class_and_type(FRAME frame_class, motor_frame_type frame_type)
+void AP_MotorsMatrix::set_frame_class_and_type(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     // exit immediately if armed or no change
     if (armed() || (frame_class == _last_frame_class && _last_frame_type == frame_type)) {
@@ -480,7 +480,7 @@ void AP_MotorsMatrix::remove_motor(int8_t motor_num)
     }
 }
 
-void AP_MotorsMatrix::setup_motors(FRAME frame_class, motor_frame_type frame_type)
+void AP_MotorsMatrix::setup_motors(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     // remove existing motors
     for (int8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
@@ -491,7 +491,7 @@ void AP_MotorsMatrix::setup_motors(FRAME frame_class, motor_frame_type frame_typ
 
     switch (frame_class) {
 
-        case FRAME::QUAD:
+        case MotorFrame::CLASS::QUAD:
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
                     add_motor(AP_MOTORS_MOT_1,  90, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
@@ -617,7 +617,7 @@ void AP_MotorsMatrix::setup_motors(FRAME frame_class, motor_frame_type frame_typ
             }
             break;  // quad
 
-        case FRAME::HEXA:
+        case MotorFrame::CLASS::HEXA:
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
                     add_motor(AP_MOTORS_MOT_1,   0, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
@@ -667,7 +667,7 @@ void AP_MotorsMatrix::setup_motors(FRAME frame_class, motor_frame_type frame_typ
             }
             break;
 
-        case FRAME::OCTA:
+        case MotorFrame::CLASS::OCTA:
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
                     add_motor(AP_MOTORS_MOT_1,    0,  AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
@@ -746,7 +746,7 @@ void AP_MotorsMatrix::setup_motors(FRAME frame_class, motor_frame_type frame_typ
             } // octa frame type
             break;
 
-        case FRAME::OCTAQUAD:
+        case MotorFrame::CLASS::OCTAQUAD:
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
                     add_motor(AP_MOTORS_MOT_1,    0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
@@ -806,7 +806,7 @@ void AP_MotorsMatrix::setup_motors(FRAME frame_class, motor_frame_type frame_typ
             }
             break;
 
-        case FRAME::DODECAHEXA: {
+        case MotorFrame::CLASS::DODECAHEXA: {
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
                     add_motor(AP_MOTORS_MOT_1,     0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);  // forward-top
@@ -843,7 +843,7 @@ void AP_MotorsMatrix::setup_motors(FRAME frame_class, motor_frame_type frame_typ
             }}
             break;
 
-        case FRAME::Y6:
+        case MotorFrame::CLASS::Y6:
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_Y6B:
                     // Y6 motor definition with all top motors spinning clockwise, all bottom motors counter clockwise
