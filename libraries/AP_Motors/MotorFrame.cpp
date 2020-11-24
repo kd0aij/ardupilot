@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include "MotorFrame.h"
 
-#undef DECL_ENUM_ELEMENT
-#define DECL_ENUM_ELEMENT( element ) #element
+#undef ENUM_VAL
+#define ENUM_VAL( element ) #element
 
 const char* MotorFrame::class_string_base [(int)CLASS::NFRAMES] =
 {
-    FRAME_CLASS_VALUES
+    CLASS_VALUES
 };
 
 const char* MotorFrame::get_class_string(CLASS index)

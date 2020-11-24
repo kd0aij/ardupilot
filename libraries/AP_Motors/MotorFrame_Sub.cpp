@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include "MotorFrame_Sub.h"
 
-#undef DECL_ENUM_ELEMENT
-#define DECL_ENUM_ELEMENT( element ) #element
+#undef ENUM_VAL
+#define ENUM_VAL( element ) #element
 const char* MotorFrame_Sub::class_string_sub [(int)MotorFrame_Sub::CLASS::NFRAMES] =
 {
     FRAME_CLASS_SUB_VALUES

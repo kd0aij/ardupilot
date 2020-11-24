@@ -18,30 +18,6 @@ public:
         AP_Param::setup_object_defaults(this, var_info);
     };
 
-//    // Supported frame types
-//#undef DECL_ENUM_ELEMENT
-//#define DECL_ENUM_ELEMENT( element ) element
-//    enum class SUB_FRAME : uint8_t {
-//        FRAME_CLASS_SUB_VALUES,
-//        NFRAMES
-//    };
-//
-//#undef DECL_ENUM_ELEMENT
-//#define DECL_ENUM_ELEMENT( element ) #element
-//    const char* frame_class_string_sub [(int)FRAME::NFRAMES] =
-//    {
-//        FRAME_CLASS_SUB_VALUES
-//    };
-//
-//    virtual const char* get_frame_string(FRAME index) override
-//    {
-//        if ((uint8_t)index < (uint8_t)SUB_FRAME::NFRAMES) {
-//            return frame_class_string_sub[(uint8_t)index];
-//        } else {
-//            return "INVALID";
-//        }
-//    }
-
     // Override parent
     void setup_motors(MotorFrame::CLASS frame_class, motor_frame_type frame_type) override;
 
