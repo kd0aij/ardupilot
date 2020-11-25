@@ -5,9 +5,9 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>        // ArduPilot Mega Vector/Matrix math Library
-#include <RC_Channel/RC_Channel.h>     // RC Channel Library
+#include <RC_Channel/RC_Channel.h>  // RC Channel Library
 #include "AP_MotorsMatrix.h"
-#include "MotorFrame_Sub.h"
+#include "MotorFrame_Sub.h"         // frame_class enum for ROVs
 
 /// @class      AP_MotorsMatrix
 class AP_Motors6DOF : public AP_MotorsMatrix {

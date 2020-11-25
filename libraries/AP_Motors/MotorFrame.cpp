@@ -1,3 +1,9 @@
+/*
+ * Implement methods to supply string values for enum class enumerator values.
+ * Uses the C preprocessor to create each string value from its enumerator.
+ * concept from: https://www.codeproject.com/Articles/10500/Converting-C-enums-to-strings
+ */
+
 #include <string.h>
 #include <stdio.h>
 #include "MotorFrame.h"

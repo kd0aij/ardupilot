@@ -1,7 +1,7 @@
 /* 
- * File:   frame_class_decl.h
+ * File:   MotorFrame_values.h
  * Author: markw
- * concept from: https://www.codeproject.com/Articles/10500/Converting-C-enums-to-strings
+ * These are the motor frame types supported by AP_MotorsMatrix and QuadPlane.
  *
  * Created on November 9, 2020, 11:32 AM
  */

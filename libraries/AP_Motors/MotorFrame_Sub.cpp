@@ -6,7 +6,7 @@
 #define ENUM_VAL( element ) #element
 const char* MotorFrame_Sub::class_string_sub [(int)MotorFrame_Sub::CLASS::NFRAMES] =
 {
-    FRAME_CLASS_SUB_VALUES
+    CLASS_VALUES_SUB
 };
 
 const char* MotorFrame_Sub::get_class_string(MotorFrame_Sub::CLASS index)

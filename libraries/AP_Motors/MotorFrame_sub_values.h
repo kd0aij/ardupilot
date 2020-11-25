@@ -1,10 +1,11 @@
 /* 
- * File:   frame_class_sub_decl.h
+ * File:   MotorFrame_sub_values.h
  * Author: markw
+ * These are the motor frame types supported by AP_Motors6DOF.
  *
- * Created on November 9,\ 2020,\ 11:32 AM
+ * Created on November 9, 2020, 11:32 AM
  */
-#define FRAME_CLASS_SUB_VALUES \
+#define CLASS_VALUES_SUB \
     ENUM_VAL(BLUEROV1),\
     ENUM_VAL(VECTORED),\
     ENUM_VAL(VECTORED_6DOF),\
