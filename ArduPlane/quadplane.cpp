@@ -594,7 +594,7 @@ bool QuadPlane::setup(void)
     }
     float loop_delta_t = 1.0 / plane.scheduler.get_loop_rate_hz();
 
-    enum AP_Motors::motor_frame_class motor_class;
+    MotorFrame::CLASS motor_class;
     enum Rotation rotation = ROTATION_NONE;
 
     /*
@@ -607,19 +607,19 @@ bool QuadPlane::setup(void)
         // map from old values to new values
         switch (old_class.get()) {
         case 0:
-            new_value = AP_Motors::MOTOR_FRAME_QUAD;
+            new_value = (uint8_t)MotorFrame::CLASS::QUAD;
             break;
         case 1:
-            new_value = AP_Motors::MOTOR_FRAME_HEXA;
+            new_value = (uint8_t)MotorFrame::CLASS::HEXA;
             break;
         case 2:
-            new_value = AP_Motors::MOTOR_FRAME_OCTA;
+            new_value = (uint8_t)MotorFrame::CLASS::OCTA;
             break;
         case 3:
-            new_value = AP_Motors::MOTOR_FRAME_OCTAQUAD;
+            new_value = (uint8_t)MotorFrame::CLASS::OCTAQUAD;
             break;
         case 4:
-            new_value = AP_Motors::MOTOR_FRAME_Y6;
+            new_value = (uint8_t)MotorFrame::CLASS::Y6;
             break;
         }
         frame_class.set_and_save(new_value);
@@ -637,42 +637,42 @@ bool QuadPlane::setup(void)
       that the objects don't affect the vehicle unless enabled and
       also saves memory when not in use
      */
-    motor_class = (enum AP_Motors::motor_frame_class)frame_class.get();
+    motor_class = (MotorFrame::CLASS)frame_class.get();
     switch (motor_class) {
-    case AP_Motors::MOTOR_FRAME_QUAD:
+    case MotorFrame::CLASS::QUAD:
         setup_default_channels(4);
         break;
-    case AP_Motors::MOTOR_FRAME_HEXA:
+    case MotorFrame::CLASS::HEXA:
         setup_default_channels(6);
         break;
-    case AP_Motors::MOTOR_FRAME_OCTA:
-    case AP_Motors::MOTOR_FRAME_OCTAQUAD:
+    case MotorFrame::CLASS::OCTA:
+    case MotorFrame::CLASS::OCTAQUAD:
         setup_default_channels(8);
         break;
-    case AP_Motors::MOTOR_FRAME_Y6:
+    case MotorFrame::CLASS::Y6:
         setup_default_channels(7);
         break;
-    case AP_Motors::MOTOR_FRAME_TRI:
+    case MotorFrame::CLASS::TRI:
         SRV_Channels::set_default_function(CH_5, SRV_Channel::k_motor1);
         SRV_Channels::set_default_function(CH_6, SRV_Channel::k_motor2);
         SRV_Channels::set_default_function(CH_8, SRV_Channel::k_motor4);
         SRV_Channels::set_default_function(CH_11, SRV_Channel::k_motor7);
         AP_Param::set_frame_type_flags(AP_PARAM_FRAME_TRICOPTER);
         break;
-    case AP_Motors::MOTOR_FRAME_TAILSITTER:
+    case MotorFrame::CLASS::TAILSITTER:
         break;
     default:
-        AP_BoardConfig::config_error("Unknown Q_FRAME_CLASS %u", (unsigned)frame_class.get());
+        AP_BoardConfig::config_error("Unsupported Q_FRAME_CLASS %u", (unsigned)frame_class.get());
     }
 
     if (tailsitter.motor_mask == 0) {
         // this is a normal quadplane
         switch (motor_class) {
-        case AP_Motors::MOTOR_FRAME_TRI:
+        case MotorFrame::CLASS::TRI:
             motors = new AP_MotorsTri(plane.scheduler.get_loop_rate_hz(), rc_speed);
             motors_var_info = AP_MotorsTri::var_info;
             break;
-        case AP_Motors::MOTOR_FRAME_TAILSITTER:
+        case MotorFrame::CLASS::TAILSITTER:
             // this is a duo-motor tailsitter (vectored thrust if tilt.tilt_mask != 0)
             motors = new AP_MotorsTailsitter(plane.scheduler.get_loop_rate_hz(), rc_speed);
             motors_var_info = AP_MotorsTailsitter::var_info;
@@ -699,6 +699,7 @@ bool QuadPlane::setup(void)
     if (!motors) {
         AP_BoardConfig::config_error("Unable to allocate %s", "motors");
     }
+    ::printf("frame_class: %s\n", MotorFrame::get_class_string(motor_class));
 
     AP_Param::load_object_from_eeprom(motors, motors_var_info);
 
@@ -730,7 +731,7 @@ bool QuadPlane::setup(void)
     }
     AP_Param::load_object_from_eeprom(loiter_nav, loiter_nav->var_info);
 
-    motors->init((AP_Motors::motor_frame_class)frame_class.get(), (AP_Motors::motor_frame_type)frame_type.get());
+    motors->init((MotorFrame::CLASS)frame_class.get(), (AP_Motors::motor_frame_type)frame_type.get());
 
     if (!motors->initialised_ok()) {
         AP_BoardConfig::config_error("unknown Q_FRAME_TYPE %u", (unsigned)frame_type.get());
@@ -772,6 +773,9 @@ bool QuadPlane::setup(void)
     // param count will have changed
     AP_Param::invalidate_count();
 
+    // TODO: delete me
+    MotorFrame::list_all_classes();
+
     gcs().send_text(MAV_SEVERITY_INFO, "QuadPlane initialised");
     initialised = true;
     return true;
@@ -784,9 +788,9 @@ void QuadPlane::setup_defaults(void)
 {
     AP_Param::set_defaults_from_table(defaults_table, ARRAY_SIZE(defaults_table));
 
-    enum AP_Motors::motor_frame_class motor_class;
-    motor_class = (enum AP_Motors::motor_frame_class)frame_class.get();
-    if (motor_class == AP_Motors::MOTOR_FRAME_TAILSITTER) {
+    MotorFrame::CLASS motor_class;
+    motor_class = (MotorFrame::CLASS)frame_class.get();
+    if (motor_class == MotorFrame::CLASS::TAILSITTER) {
         AP_Param::set_defaults_from_table(defaults_table_tailsitter, ARRAY_SIZE(defaults_table_tailsitter));
     }
     

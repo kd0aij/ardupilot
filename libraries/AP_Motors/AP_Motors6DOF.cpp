@@ -121,7 +121,7 @@ const AP_Param::GroupInfo AP_Motors6DOF::var_info[] = {
     AP_GROUPEND
 };
 
-void AP_Motors6DOF::setup_motors(motor_frame_class frame_class, motor_frame_type frame_type)
+void AP_Motors6DOF::setup_motors(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     // remove existing motors
     for (int8_t i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
@@ -129,9 +129,9 @@ void AP_Motors6DOF::setup_motors(motor_frame_class frame_class, motor_frame_type
     }
 
     // hard coded config for supported frames
-    switch ((sub_frame_t)frame_class) {
+    switch ((MotorFrame_Sub::CLASS)frame_class) {
         //                 Motor #              Roll Factor     Pitch Factor    Yaw Factor      Throttle Factor     Forward Factor      Lateral Factor  Testing Order
-    case SUB_FRAME_BLUEROV1:
+    case MotorFrame_Sub::CLASS::BLUEROV1:
         add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              -1.0f,          0,                  1.0f,               0,              1);
         add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              1.0f,           0,                  1.0f,               0,              2);
         add_motor_raw_6dof(AP_MOTORS_MOT_3,     -0.5f,          0.5f,           0,              0.45f,              0,                  0,              3);
@@ -140,7 +140,7 @@ void AP_Motors6DOF::setup_motors(motor_frame_class frame_class, motor_frame_type
         add_motor_raw_6dof(AP_MOTORS_MOT_6,     -0.25f,         0,              0,              0,                  0,                  1.0f,           6);
         break;
 
-    case SUB_FRAME_VECTORED_6DOF_90DEG:
+    case MotorFrame_Sub::CLASS::VECTORED_6DOF_90DEG:
         add_motor_raw_6dof(AP_MOTORS_MOT_1,     1.0f,           1.0f,           0,              1.0f,               0,                  0,              1);
         add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              1.0f,           0,                  1.0f,               0,              2);
         add_motor_raw_6dof(AP_MOTORS_MOT_3,     1.0f,           -1.0f,          0,              1.0f,               0,                  0,              3);
@@ -151,7 +151,7 @@ void AP_Motors6DOF::setup_motors(motor_frame_class frame_class, motor_frame_type
         add_motor_raw_6dof(AP_MOTORS_MOT_8,     -1.0f,          -1.0f,          0,              1.0f,               0,                  0,              8);
         break;
 
-    case SUB_FRAME_VECTORED_6DOF:
+    case MotorFrame_Sub::CLASS::VECTORED_6DOF:
         add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              1.0f,           0,                  -1.0f,              1.0f,           1);
         add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              -1.0f,          0,                  -1.0f,              -1.0f,          2);
         add_motor_raw_6dof(AP_MOTORS_MOT_3,     0,              0,              -1.0f,          0,                  1.0f,               1.0f,           3);
@@ -162,7 +162,7 @@ void AP_Motors6DOF::setup_motors(motor_frame_class frame_class, motor_frame_type
         add_motor_raw_6dof(AP_MOTORS_MOT_8,     -1.0f,          1.0f,           0,              -1.0f,              0,                  0,              8);
         break;
 
-    case SUB_FRAME_VECTORED:
+    case MotorFrame_Sub::CLASS::VECTORED:
         add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              1.0f,           0,                  -1.0f,              1.0f,           1);
         add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              -1.0f,          0,                  -1.0f,              -1.0f,          2);
         add_motor_raw_6dof(AP_MOTORS_MOT_3,     0,              0,              -1.0f,          0,                  1.0f,               1.0f,           3);
@@ -171,17 +171,17 @@ void AP_Motors6DOF::setup_motors(motor_frame_class frame_class, motor_frame_type
         add_motor_raw_6dof(AP_MOTORS_MOT_6,     -1.0f,          0,              0,              -1.0f,              0,                  0,              6);
         break;
 
-    case SUB_FRAME_CUSTOM:
+    case MotorFrame_Sub::CLASS::CUSTOM:
         // Put your custom motor setup here
         //break;
 
-    case SUB_FRAME_SIMPLEROV_3:
+    case MotorFrame_Sub::CLASS::SIMPLEROV_3:
         add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              -1.0f,          0,                  1.0f,               0,              1);
         add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              1.0f,           0,                  1.0f,               0,              2);
         add_motor_raw_6dof(AP_MOTORS_MOT_3,     0,              0,              0,              -1.0f,              0,                  0,              3);
         break;
-    case SUB_FRAME_SIMPLEROV_4:
-    case SUB_FRAME_SIMPLEROV_5:
+    case MotorFrame_Sub::CLASS::SIMPLEROV_4:
+    case MotorFrame_Sub::CLASS::SIMPLEROV_5:
     default:
         add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              -1.0f,          0,                  1.0f,               0,              1);
         add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              1.0f,           0,                  1.0f,               0,              2);
@@ -283,9 +283,9 @@ float AP_Motors6DOF::get_current_limit_max_throttle()
 // ToDo calculate headroom for rpy to be added for stabilization during full throttle/forward/lateral commands
 void AP_Motors6DOF::output_armed_stabilizing()
 {
-    if ((sub_frame_t)_last_frame_class == SUB_FRAME_VECTORED) {
+    if ((MotorFrame_Sub::CLASS)_last_frame_class == MotorFrame_Sub::CLASS::VECTORED) {
         output_armed_stabilizing_vectored();
-    } else if ((sub_frame_t)_last_frame_class == SUB_FRAME_VECTORED_6DOF) {
+    } else if ((MotorFrame_Sub::CLASS)_last_frame_class == MotorFrame_Sub::CLASS::VECTORED_6DOF) {
         output_armed_stabilizing_vectored_6dof();
     } else {
         uint8_t i;                          // general purpose counter

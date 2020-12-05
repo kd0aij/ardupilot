@@ -104,7 +104,7 @@ const AP_Param::GroupInfo AP_MotorsHeli::var_info[] = {
 //
 
 // init
-void AP_MotorsHeli::init(motor_frame_class frame_class, motor_frame_type frame_type)
+void AP_MotorsHeli::init(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
     // remember frame class and type
     _frame_type = frame_type;
@@ -132,7 +132,7 @@ void AP_MotorsHeli::init(motor_frame_class frame_class, motor_frame_type frame_t
     calculate_scalars();
 
     // record successful initialisation if what we setup was the desired frame_class
-    set_initialised_ok(frame_class == MOTOR_FRAME_HELI);
+    set_initialised_ok(frame_class == MotorFrame::CLASS::HELI);
 
     // set flag to true so targets are initialized once aircraft is armed for first time
     _heliflags.init_targets_on_arming = true;
@@ -140,9 +140,9 @@ void AP_MotorsHeli::init(motor_frame_class frame_class, motor_frame_type frame_t
 }
 
 // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-void AP_MotorsHeli::set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type)
+void AP_MotorsHeli::set_frame_class_and_type(MotorFrame::CLASS frame_class, motor_frame_type frame_type)
 {
-    set_initialised_ok(frame_class == MOTOR_FRAME_HELI);
+    set_initialised_ok(frame_class == MotorFrame::CLASS::HELI);
 }
 
 // output_min - sets servos to neutral point with motors stopped
@@ -241,8 +241,8 @@ void AP_MotorsHeli::output_disarmed()
                 _roll_in = 0.0f;
                 _pitch_in = 0.0f;
                 _throttle_filter.reset(1.0f);
-                if (_frame_class == MOTOR_FRAME_HELI_DUAL ||
-                    _frame_class == MOTOR_FRAME_HELI_QUAD) {
+                if (_frame_class == MotorFrame::CLASS::HELI_DUAL ||
+                    _frame_class == MotorFrame::CLASS::HELI_QUAD) {
                     _yaw_in = 0;
                 } else {
                     _yaw_in = 1;
@@ -253,8 +253,8 @@ void AP_MotorsHeli::output_disarmed()
                 _roll_in = 0.0f;
                 _pitch_in = 0.0f;
                 _throttle_filter.reset(0.0f);
-                if (_frame_class == MOTOR_FRAME_HELI_DUAL ||
-                    _frame_class == MOTOR_FRAME_HELI_QUAD) {
+                if (_frame_class == MotorFrame::CLASS::HELI_DUAL ||
+                    _frame_class == MotorFrame::CLASS::HELI_QUAD) {
                     _yaw_in = 0;
                 } else {
                     _yaw_in = -1;

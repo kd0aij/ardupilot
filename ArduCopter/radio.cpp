@@ -42,7 +42,10 @@ void Copter::init_rc_in()
 void Copter::init_rc_out()
 {
     motors->set_loop_rate(scheduler.get_loop_rate_hz());
-    motors->init((AP_Motors::motor_frame_class)g2.frame_class.get(), (AP_Motors::motor_frame_type)g.frame_type.get());
+    motors->init((MotorFrame::CLASS)g2.frame_class.get(), (AP_Motors::motor_frame_type)g.frame_type.get());
+
+    // TODO: delete me
+    MotorFrame::list_all_classes();
 
     // enable aux servos to cope with multiple output channels per motor
     SRV_Channels::enable_aux_servos();

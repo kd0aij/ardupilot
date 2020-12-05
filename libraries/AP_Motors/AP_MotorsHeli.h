@@ -42,10 +42,10 @@ public:
     };
 
     // init
-    void init(motor_frame_class frame_class, motor_frame_type frame_type) override;
+    void init(MotorFrame::CLASS frame_class, motor_frame_type frame_type) override;
 
     // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-    void set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type) override;
+    void set_frame_class_and_type(MotorFrame::CLASS frame_class, motor_frame_type frame_type) override;
 
     // set update rate to motors - a value in hertz
     virtual void set_update_rate( uint16_t speed_hz ) override = 0;
@@ -218,5 +218,5 @@ protected:
     uint8_t         _servo_test_cycle_counter = 0;   // number of test cycles left to run after bootup
 
     motor_frame_type _frame_type;
-    motor_frame_class _frame_class;
+    MotorFrame::CLASS _frame_class;
 };

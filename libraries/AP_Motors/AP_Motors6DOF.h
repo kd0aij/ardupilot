@@ -5,8 +5,9 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>        // ArduPilot Mega Vector/Matrix math Library
-#include <RC_Channel/RC_Channel.h>     // RC Channel Library
+#include <RC_Channel/RC_Channel.h>  // RC Channel Library
 #include "AP_MotorsMatrix.h"
+#include "MotorFrame_Sub.h"         // frame_class enum for ROVs
 
 /// @class      AP_MotorsMatrix
 class AP_Motors6DOF : public AP_MotorsMatrix {
@@ -17,20 +18,8 @@ public:
         AP_Param::setup_object_defaults(this, var_info);
     };
 
-    // Supported frame types
-    typedef enum {
-        SUB_FRAME_BLUEROV1,
-        SUB_FRAME_VECTORED,
-        SUB_FRAME_VECTORED_6DOF,
-        SUB_FRAME_VECTORED_6DOF_90DEG,
-        SUB_FRAME_SIMPLEROV_3,
-        SUB_FRAME_SIMPLEROV_4,
-        SUB_FRAME_SIMPLEROV_5,
-        SUB_FRAME_CUSTOM
-    } sub_frame_t;
-
     // Override parent
-    void setup_motors(motor_frame_class frame_class, motor_frame_type frame_type) override;
+    void setup_motors(MotorFrame::CLASS frame_class, motor_frame_type frame_type) override;
 
     // Override parent
     void output_min() override;
