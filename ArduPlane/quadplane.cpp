@@ -637,6 +637,7 @@ bool QuadPlane::setup(void)
       that the objects don't affect the vehicle unless enabled and
       also saves memory when not in use
      */
+    bool copter_tailsitter_supported = true;
     motor_class = (enum AP_Motors::motor_frame_class)frame_class.get();
     switch (motor_class) {
     case AP_Motors::MOTOR_FRAME_QUAD:
@@ -658,8 +659,10 @@ bool QuadPlane::setup(void)
         SRV_Channels::set_default_function(CH_8, SRV_Channel::k_motor4);
         SRV_Channels::set_default_function(CH_11, SRV_Channel::k_motor7);
         AP_Param::set_frame_type_flags(AP_PARAM_FRAME_TRICOPTER);
+        copter_tailsitter_supported = false;
         break;
     case AP_Motors::MOTOR_FRAME_TAILSITTER:
+        copter_tailsitter_supported = false;
         break;
     default:
         AP_BoardConfig::config_error("Unknown Q_FRAME_CLASS %u", (unsigned)frame_class.get());
@@ -688,6 +691,10 @@ bool QuadPlane::setup(void)
     } else {
         // this is a copter tailsitter with motor layout specified by frame_class and frame_type
         // tilting motors are not supported (tiltrotor control variables are ignored)
+        if (!copter_tailsitter_supported) {
+            AP_BoardConfig::config_error("unsupported copterTS class: %u", frame_class);
+        }
+        ::printf("configuring copter tailsitter\n");
         if (tilt.tilt_mask != 0) {
             gcs().send_text(MAV_SEVERITY_INFO, "Warning: Motor tilt not supported");
         }
