@@ -35,6 +35,13 @@ public:
 
     // read input from hal.rcin - create a control_in value
     bool        update(void);
+
+    // update converted input values if new data is available
+    void        update_norm_in(void);
+    void        update_norm_in_no_dz(void);
+    void        update_control_in_no_dz(void);
+
+    float       calc_normalized_input(int16_t dz);
     void        recompute_pwm_no_deadzone();
 
     // calculate an angle given dead_zone and trim. This is used by the quadplane code
@@ -43,11 +50,11 @@ public:
 
     // return a normalised input for a channel, in range -1 to 1,
     // centered around the channel trim. Ignore deadzone.
-    float       norm_input() const;
+    float       norm_input();
 
     // return a normalised input for a channel, in range -1 to 1,
     // centered around the channel trim. Take into account the deadzone
-    float       norm_input_dz() const;
+    float       norm_input_dz();
 
     // return a normalised input for a channel, in range -1 to 1,
     // ignores trim and deadzone
@@ -75,7 +82,7 @@ public:
     int16_t    stick_mixing(const int16_t servo_in);
 
     // get control input with zero deadzone
-    int16_t    get_control_in_zero_dz(void) const;
+    int16_t    get_control_in_zero_dz(void);
 
     int16_t    get_radio_min() const {return radio_min.get();}
     void       set_radio_min(int16_t val) { radio_min = val;}
@@ -313,6 +320,15 @@ private:
 
     // value generated from PWM normalised to configured scale
     int16_t    control_in;
+
+    bool       control_in_no_dz_stale;
+    int16_t    control_in_no_dz;
+
+    bool       norm_in_stale;
+    float      norm_in;
+
+    bool       norm_in_no_dz_stale;
+    float      norm_in_no_dz;
 
     AP_Int16    radio_min;
     AP_Int16    radio_trim;
