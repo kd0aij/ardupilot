@@ -132,6 +132,11 @@ bool RC_Channel::get_reverse(void) const
     return bool(reversed.get());
 }
 
+void RC_Channel::set_reverse(bool v)
+{
+    reversed.set(v);
+}
+
 // read input from hal.rcin or overrides
 bool RC_Channel::update(void)
 {
@@ -143,6 +148,9 @@ bool RC_Channel::update(void)
         return false;
     }
 
+    norm_in_stale = true;
+    norm_in_no_dz_stale = true;
+    control_in_no_dz_stale = true;
     if (type_in == RC_CHANNEL_TYPE_RANGE) {
         control_in = pwm_to_range();
     } else {
@@ -151,6 +159,42 @@ bool RC_Channel::update(void)
     }
 
     return true;
+}
+
+// Note that if parameter radio_min is not less than parameter radio_trim or
+// radio_max is not greater than radio_trim the resultant normalized value is zero
+// when radio_in is below or above radio_trim, respectively. This is reasonable
+// since parameters radio_min/max are expected to reflect the actual range of radio_in,
+// and no range check is performed on radio_trim (or any other parameters).
+float RC_Channel::calc_normalized_input(int16_t dz){
+    int16_t reverse_mul = (reversed?-1:1);
+    int16_t dz_min = radio_trim - dz;
+    int16_t dz_max = radio_trim + dz;
+    float result = 0;
+    if ((radio_in < dz_min) && (dz_min > radio_min)) {
+        result = reverse_mul * (float)(radio_in - dz_min) / (float)(dz_min - radio_min);
+    } else if ((radio_in > dz_max) && (radio_max > dz_max)) {
+        result = reverse_mul * (float)(radio_in - dz_max) / (float)(radio_max  - dz_max);
+    }
+    return constrain_float(result, -1.0f, 1.0f);
+}
+
+// update norm_in if a new radio_in value is available
+void RC_Channel::update_norm_in()
+{
+    if (norm_in_stale) {
+        norm_in_stale = false;
+        norm_in = calc_normalized_input(dead_zone);
+    }
+}
+
+// update norm_in_no_dz if a new radio_in value is available
+void RC_Channel::update_norm_in_no_dz()
+{
+    if (norm_in_no_dz_stale) {
+        norm_in_no_dz_stale = false;
+        norm_in_no_dz = calc_normalized_input(0);
+    }
 }
 
 // recompute control values with no deadzone
@@ -258,49 +302,34 @@ int16_t RC_Channel::pwm_to_range() const
     return pwm_to_range_dz(dead_zone);
 }
 
-
-int16_t RC_Channel::get_control_in_zero_dz(void) const
+void RC_Channel::update_control_in_no_dz(void)
 {
-    if (type_in == RC_CHANNEL_TYPE_RANGE) {
-        return pwm_to_range_dz(0);
+    if (control_in_no_dz_stale) {
+        control_in_no_dz_stale = false;
+        if (type_in == RC_CHANNEL_TYPE_RANGE) {
+            control_in_no_dz = pwm_to_range_dz(0);
+        } else {
+            control_in_no_dz = pwm_to_angle_dz(0);
+        }
     }
-    return pwm_to_angle_dz(0);
 }
 
-// ------------------------------------------
-
-float RC_Channel::norm_input() const
+int16_t RC_Channel::get_control_in_zero_dz(void)
 {
-    float ret;
-    int16_t reverse_mul = (reversed?-1:1);
-    if (radio_in < radio_trim) {
-        if (radio_min >= radio_trim) {
-            return 0.0f;
-        }
-        ret = reverse_mul * (float)(radio_in - radio_trim) / (float)(radio_trim - radio_min);
-    } else {
-        if (radio_max <= radio_trim) {
-            return 0.0f;
-        }
-        ret = reverse_mul * (float)(radio_in - radio_trim) / (float)(radio_max  - radio_trim);
-    }
-    return constrain_float(ret, -1.0f, 1.0f);
+    update_control_in_no_dz();
+    return control_in_no_dz;
 }
 
-float RC_Channel::norm_input_dz() const
+float RC_Channel::norm_input()
 {
-    int16_t dz_min = radio_trim - dead_zone;
-    int16_t dz_max = radio_trim + dead_zone;
-    float ret;
-    int16_t reverse_mul = (reversed?-1:1);
-    if (radio_in < dz_min && dz_min > radio_min) {
-        ret = reverse_mul * (float)(radio_in - dz_min) / (float)(dz_min - radio_min);
-    } else if (radio_in > dz_max && radio_max > dz_max) {
-        ret = reverse_mul * (float)(radio_in - dz_max) / (float)(radio_max  - dz_max);
-    } else {
-        ret = 0;
-    }
-    return constrain_float(ret, -1.0f, 1.0f);
+    update_norm_in_no_dz();
+    return norm_in_no_dz;
+}
+
+float RC_Channel::norm_input_dz()
+{
+    update_norm_in();
+    return norm_in;
 }
 
 // return a normalised input for a channel, in range -1 to 1,
