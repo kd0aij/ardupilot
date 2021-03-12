@@ -1506,7 +1506,15 @@ float QuadPlane::get_pilot_input_yaw_rate_cds(void) const
         // must have a non-zero max yaw rate for scaling to work
         max_rate = (yaw_rate_max < 1.0f) ? 1 : yaw_rate_max;
     }
-    return plane.channel_rudder->get_control_in() * max_rate / 45;
+
+    // if tailsitter has plane mode inputs, use -roll for yaw unless in QACRO mode
+    if (plane.quadplane.tailsitter_active() &&
+        (plane.control_mode != &plane.mode_qacro) &&
+        (tailsitter.input_type & TAILSITTER_INPUT_PLANE)) {
+        return -plane.channel_roll->norm_input() * max_rate * 100;
+    } else {
+        return plane.channel_rudder->norm_input() * max_rate * 100;
+    }
 }
 
 /*
