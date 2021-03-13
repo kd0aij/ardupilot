@@ -942,6 +942,10 @@ void Plane::servos_output(void)
     SRV_Channels::output_ch_all();
 
     SRV_Channels::push();
+    
+    DBGprint::printf(DBGTYPE::PRINTF, 0, 0, "servo_out: ail: %d, elev: %d\n", 
+            SRV_Channels::get_output_scaled(SRV_Channel::k_aileron),
+            SRV_Channels::get_output_scaled(SRV_Channel::k_elevator));
 
     if (g2.servo_channels.auto_trim_enabled()) {
         servos_auto_trim();

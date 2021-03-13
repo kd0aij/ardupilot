@@ -208,6 +208,8 @@ void Plane::read_radio()
 
     // check for transmitter tuning changes
     tuning.check_input(control_mode->mode_number());
+    
+    DBGprint::printf(DBGTYPE::PRINTF, 0, 0, "RC_roll: %f, RC_pitch: %f\n", channel_roll->norm_input_dz(), channel_pitch->norm_input_dz());
 }
 
 int16_t Plane::rudder_input(void)

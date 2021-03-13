@@ -22,6 +22,9 @@ void ModeQStabilize::update()
     if (plane.quadplane.tailsitter_active()) {
         // tailsitters are different
         set_tailsitter_roll_pitch(roll_input, pitch_input);
+
+        DBGprint::printf(DBGTYPE::PRINTF, 0, 0, "ModeQStabilize::update: roll: %d, pitch: %d\n", plane.nav_roll_cd, plane.nav_pitch_cd);
+
         return;
     }
 
@@ -33,6 +36,8 @@ void ModeQStabilize::update()
         plane.nav_roll_cd = roll_input * plane.quadplane.aparm.angle_max;
         plane.nav_pitch_cd = pitch_input * plane.quadplane.aparm.angle_max;
     }
+
+    DBGprint::printf(DBGTYPE::PRINTF, 0, 0, "ModeQStabilize::update: roll: %d, pitch: %d\n", plane.nav_roll_cd, plane.nav_pitch_cd);
 }
 
 // set the desired roll and pitch for a tailsitter

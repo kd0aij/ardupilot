@@ -1215,6 +1215,8 @@ void QuadPlane::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_o
 
     // apply lateral tilt to euler roll conversion
     roll_out_cd = 100 * degrees(atanf(cosf(radians(pitch_out_cd*0.01))*tanf(radians(roll_out_cd*0.01))));
+    
+    DBGprint::printf(DBGTYPE::PRINTF, 0, 0, "get_pilot_lean_angles: roll: %f, pitch: %f\n", roll_out_cd, pitch_out_cd);
 }
 
 /*
