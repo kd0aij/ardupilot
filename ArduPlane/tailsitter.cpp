@@ -32,6 +32,21 @@ bool QuadPlane::is_tailsitter(void) const
 }
 
 /*
+  handle tailsitter.input_type
+*/
+void QuadPlane::get_tailsitter_pilot_input_roll_yaw(float &roll_input, float &yaw_input) const {
+    if (tailsitter_active() &&
+        (plane.control_mode != &plane.mode_qacro) &&
+        (tailsitter.input_type & TAILSITTER_INPUT_PLANE)) {
+        roll_input =  plane.channel_rudder->norm_input_dz();
+        yaw_input  = -plane.channel_roll->norm_input_dz();
+    } else {
+        roll_input = plane.channel_roll->norm_input_dz();
+        yaw_input  = plane.channel_rudder->norm_input_dz();
+    }
+}
+
+/*
   return true when flying a control surface only tailsitter
  */
 bool QuadPlane::is_control_surface_tailsitter(void) const
@@ -43,7 +58,7 @@ bool QuadPlane::is_control_surface_tailsitter(void) const
 /*
   check if we are flying as a tailsitter
  */
-bool QuadPlane::tailsitter_active(void)
+bool QuadPlane::tailsitter_active(void) const
 {
     if (!is_tailsitter()) {
         return false;
