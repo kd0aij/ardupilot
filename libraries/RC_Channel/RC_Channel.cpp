@@ -201,13 +201,17 @@ int16_t RC_Channel::pwm_to_angle_dz_trim(uint16_t _dead_zone, uint16_t _trim) co
     // don't allow out of range values
     int16_t r_in = constrain_int16(radio_in, radio_min.get(), radio_max.get());
 
+    float temp;
+    int16_t fres = 0;
     if (r_in > radio_trim_high && radio_max != radio_trim_high) {
-        return reverse_mul * ((int32_t)high_in * (int32_t)(r_in - radio_trim_high)) / (int32_t)(radio_max  - radio_trim_high);
+        temp = reverse_mul * high_in * (float)(r_in - radio_trim_high) / (radio_max  - radio_trim_high);
+        fres = round(temp);
     } else if (r_in < radio_trim_low && radio_trim_low != radio_min) {
-        return reverse_mul * ((int32_t)high_in * (int32_t)(r_in - radio_trim_low)) / (int32_t)(radio_trim_low - radio_min);
-    } else {
-        return 0;
+        temp = reverse_mul * high_in * (float)(r_in - radio_trim_low) / (radio_trim_low - radio_min);
+        fres = round(temp);
     }
+
+    return fres;
 }
 
 /*
