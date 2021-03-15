@@ -285,22 +285,24 @@ bool QuadPlane::tailsitter_transition_vtol_complete(void) const
     return false;
 }
 
-// handle different tailsitter input types
-void QuadPlane::tailsitter_check_input(void)
-{
-    if (tailsitter_active() &&
-        (tailsitter.input_type & TAILSITTER_INPUT_PLANE)) {
-        // the user has asked for body frame controls when tailsitter
-        // is active. We switch around the control_in value for the
-        // channels to do this, as that ensures the value is
-        // consistent throughout the code
-        int16_t roll_in = plane.channel_roll->get_control_in();
-        int16_t yaw_in = plane.channel_rudder->get_control_in();
-        plane.channel_roll->set_control_in(yaw_in);
-        plane.channel_rudder->set_control_in(-roll_in);
-    }
-}
-
+//// handle different tailsitter input types
+//void QuadPlane::tailsitter_check_input(void)
+//{
+//    if (tailsitter_active() &&
+//        (plane.control_mode != &plane.mode_qacro) &&
+//        (tailsitter.input_type & TAILSITTER_INPUT_PLANE)) {
+//        // the user has asked for body frame controls when tailsitter
+//        // is active. We swap the rudder and aileron channels 
+//        // and reverse the new aileron channel.
+//        
+//        tailsitter.roll_yaw_swap_active = true;
+//
+//    } else {
+//        // restore original channel mapping and roll reversal
+//        tailsitter.roll_yaw_swap_active = false;
+//    }
+//}
+//
 /*
   return true if we are a tailsitter transitioning to VTOL flight
  */
