@@ -27,6 +27,7 @@ public:
     uint16_t    get_range() const { return high_in; }
     void        set_angle(uint16_t angle);
     bool        get_reverse(void) const;
+    void        set_reverse(bool v) { reversed.set(v); }
     void        set_default_dead_zone(int16_t dzone);
     uint16_t    get_dead_zone(void) const { return dead_zone; }
 

@@ -539,6 +539,9 @@ private:
         AP_Float scaling_speed_max;
         AP_Int16 gain_scaling_mask;
         AP_Float disk_loading;
+        bool roll_reversed;
+        bool rudder_reversed;
+        bool roll_yaw_swap_active;
     } tailsitter;
 
     // tailsitter speed scaler

@@ -19,6 +19,59 @@ void Plane::set_control_channels(void)
     channel_throttle = RC_Channels::rc_channel(rcmap.throttle()-1);
     channel_rudder   = RC_Channels::rc_channel(rcmap.yaw()-1);
 
+    // If quadplane.tailsitter.roll_yaw_swap_active, we want to map rudder
+    // to -roll and roll to rudder. This is done by swapping the roll and
+    // rudder channel pointers and setting rudder reverse to !roll reverse.
+    // To deal with run-time changes to roll and rudder reverse params,
+    // we save those values in struct tailsitter and take necessary actions
+    // when they are changed by the user.
+    // TODO: changes to RC1_REVERSED are only effective in non-swapped state
+    // although changes to RC4_REVERSED work in swapped state (affecting the
+    // MC roll axis), but a side-effect
+    // is to reverse both roll and yaw channels when returning to unswapped
+    // This is because RC4 is the roll channel when swapped, and returning
+    // to unswapped causes tailsitter.roll_reversed to flip
+    // So detecting a change to channel_roll->get_reverse() when swapped
+    // means that ???
+    // Could duplicate the roll and yaw channels for use in swapped state
+    // to have an extra set of parameters... 
+    // Is it possible to lock out changes to parameters?
+    if (quadplane.tailsitter_active() &&
+        (control_mode != &mode_qacro) &&
+        (quadplane.tailsitter.input_type & quadplane.TAILSITTER_INPUT_PLANE)) {
+//    if (!quadplane.tailsitter.roll_yaw_swap_active) {
+        // swap inactive, just update rudder_reversed and roll_reversed
+        channel_roll = RC_Channels::rc_channel(rcmap.roll()-1);
+        channel_rudder = RC_Channels::rc_channel(rcmap.yaw()-1);
+        quadplane.tailsitter.roll_reversed = channel_roll->get_reverse();
+        quadplane.tailsitter.rudder_reversed = channel_rudder->get_reverse();
+
+        ::printf("swap inactive: roll_reversed: %d, rudder_reversed: %d\n",
+                quadplane.tailsitter.roll_reversed,
+                quadplane.tailsitter.rudder_reversed);
+    } else {
+        // map roll and rudder to (MC mode) yaw and roll channels
+        channel_roll = RC_Channels::rc_channel(rcmap.yaw()-1);
+        channel_rudder = RC_Channels::rc_channel(rcmap.roll()-1);
+
+        // reverse the new rudder channel (this is the MC roll axis)
+        channel_rudder->set_reverse(!quadplane.tailsitter.roll_reversed);
+
+        ::printf("swap active: roll_reversed: %d, rudder_reversed: %d\n", 
+                channel_rudder->get_reverse(),
+                channel_roll->get_reverse());
+
+        // with roll and rudder channel pointers swapped...
+//        if (quadplane.tailsitter.rudder_reversed == channel_rudder->get_reverse()) {
+//            // rudder reverse has changed
+//            quadplane.tailsitter.rudder_reversed = !channel_rudder->get_reverse();
+//            ::printf("swap active: rudder_reversed changed: %d\n", quadplane.tailsitter.rudder_reversed);
+//        }
+//        if (quadplane.tailsitter.roll_reversed != channel_rudder->get_reverse()) {
+//            quadplane.tailsitter.roll_reversed = channel_rudder->get_reverse();
+//            ::printf("swap active: roll_reversed changed: %d\n", quadplane.tailsitter.roll_reversed);
+//        }
+    }
     // set rc channel ranges
     channel_roll->set_angle(SERVO_MAX);
     channel_pitch->set_angle(SERVO_MAX);
@@ -69,6 +122,8 @@ void Plane::init_rc_in()
     channel_pitch->set_default_dead_zone(30);
     channel_rudder->set_default_dead_zone(30);
     channel_throttle->set_default_dead_zone(30);
+    plane.quadplane.tailsitter.roll_reversed = channel_roll->get_reverse();
+    plane.quadplane.tailsitter.rudder_reversed = channel_rudder->get_reverse();
 }
 
 /*
@@ -206,9 +261,9 @@ void Plane::read_radio()
 
     rudder_arm_disarm_check();
 
-    // potentially swap inputs for tailsitters
-    quadplane.tailsitter_check_input();
-
+//    // potentially swap inputs for tailsitters
+//    quadplane.tailsitter_check_input();
+//
     // check for transmitter tuning changes
     tuning.check_input(control_mode->mode_number());
 }
