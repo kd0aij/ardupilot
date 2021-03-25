@@ -98,7 +98,7 @@ void AP_Mount_Backend::control(int32_t pitch_or_lat, int32_t roll_or_lon, int32_
     }
 }
 
-void AP_Mount_Backend::rate_input_rad(float &out, const RC_Channel *chan, float min, float max) const
+void AP_Mount_Backend::rate_input_rad(float &out, RC_Channel *chan, float min, float max) const
 {
     if ((chan == nullptr) || (chan->get_radio_in() == 0)) {
         return;
@@ -110,9 +110,9 @@ void AP_Mount_Backend::rate_input_rad(float &out, const RC_Channel *chan, float 
 // update_targets_from_rc - updates angle targets using input from receiver
 void AP_Mount_Backend::update_targets_from_rc()
 {
-    const RC_Channel *roll_ch = rc().channel(_state._roll_rc_in - 1);
-    const RC_Channel *tilt_ch = rc().channel(_state._tilt_rc_in - 1);
-    const RC_Channel *pan_ch = rc().channel(_state._pan_rc_in - 1);
+    RC_Channel *roll_ch = rc().channel(_state._roll_rc_in - 1);
+    RC_Channel *tilt_ch = rc().channel(_state._tilt_rc_in - 1);
+    RC_Channel *pan_ch = rc().channel(_state._pan_rc_in - 1);
 
     // if joystick_speed is defined then pilot input defines a rate of change of the angle
     if (_frontend._joystick_speed) {
