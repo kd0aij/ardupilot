@@ -143,11 +143,14 @@ bool RC_Channel::update(void)
         return false;
     }
 
+    control_in_ignore_trim = pwm_to_range_ignore_trim();
     if (type_in == RC_CHANNEL_TYPE_RANGE) {
         control_in = pwm_to_range();
+        control_in_zero_dz = pwm_to_range_dz(0);
     } else {
         //RC_CHANNEL_TYPE_ANGLE
         control_in = pwm_to_angle();
+        control_in_zero_dz = pwm_to_angle_dz_trim(0, radio_trim);
     }
 
     return true;
@@ -158,12 +161,7 @@ bool RC_Channel::update(void)
 // to give the same output as input
 void RC_Channel::recompute_pwm_no_deadzone()
 {
-    if (type_in == RC_CHANNEL_TYPE_RANGE) {
-        control_in = pwm_to_range_dz(0);
-    } else {
-        //RC_CHANNEL_ANGLE
-        control_in = pwm_to_angle_dz(0);
-    }
+    control_in = control_in_zero_dz;
 }
 
 /*
@@ -191,6 +189,7 @@ int16_t RC_Channel::get_control_mid() const
   return an "angle in centidegrees" (normally -4500 to 4500) from
   the current radio_in value using the specified dead_zone
  */
+#define DEBUG 1
 int16_t RC_Channel::pwm_to_angle_dz_trim(uint16_t _dead_zone, uint16_t _trim) const
 {
     int16_t radio_trim_high = _trim + _dead_zone;
@@ -201,13 +200,28 @@ int16_t RC_Channel::pwm_to_angle_dz_trim(uint16_t _dead_zone, uint16_t _trim) co
     // don't allow out of range values
     int16_t r_in = constrain_int16(radio_in, radio_min.get(), radio_max.get());
 
+    float result;
     if (r_in > radio_trim_high && radio_max != radio_trim_high) {
-        return reverse_mul * ((int32_t)high_in * (int32_t)(r_in - radio_trim_high)) / (int32_t)(radio_max  - radio_trim_high);
+        result = reverse_mul * ((float)high_in * (float)(r_in - radio_trim_high)) / (float)(radio_max  - radio_trim_high);
     } else if (r_in < radio_trim_low && radio_trim_low != radio_min) {
-        return reverse_mul * ((int32_t)high_in * (int32_t)(r_in - radio_trim_low)) / (int32_t)(radio_trim_low - radio_min);
+        result = reverse_mul * ((float)high_in * (float)(r_in - radio_trim_low)) / (float)(radio_trim_low - radio_min);
     } else {
-        return 0;
+        result = 0;
     }
+#if DEBUG
+    int16_t iresult;
+    if (r_in > radio_trim_high && radio_max != radio_trim_high) {
+        iresult = reverse_mul * ((int32_t)high_in * (int32_t)(r_in - radio_trim_high)) / (int32_t)(radio_max  - radio_trim_high);
+    } else if (r_in < radio_trim_low && radio_trim_low != radio_min) {
+        iresult = reverse_mul * ((int32_t)high_in * (int32_t)(r_in - radio_trim_low)) / (int32_t)(radio_trim_low - radio_min);
+    } else {
+        iresult = 0;
+    }
+    AP::logger().Write("NRM", "TimeUS,I,old,new,diff", "s#---", "-----", "QBdff",
+            AP_HAL::micros64(), ch_in,
+            iresult, result, result-iresult);
+#endif
+    return result;
 }
 
 /*
@@ -258,19 +272,26 @@ int16_t RC_Channel::pwm_to_range() const
     return pwm_to_range_dz(dead_zone);
 }
 
+float RC_Channel::pwm_to_range_ignore_trim() const
+{
+    // sanity check min and max to avoid divide by zero
+    if (radio_max <= radio_min) {
+        return 0.0f;
+    }
+    float ret = (reversed ? -2.0f : 2.0f) * (((float)(radio_in - radio_min) / (float)(radio_max - radio_min)) - 0.5f);
+    return constrain_float(ret, -1.0f, 1.0f);
+}
 
 int16_t RC_Channel::get_control_in_zero_dz(void) const
 {
-    if (type_in == RC_CHANNEL_TYPE_RANGE) {
-        return pwm_to_range_dz(0);
-    }
-    return pwm_to_angle_dz(0);
+    return control_in_zero_dz;
 }
 
 // ------------------------------------------
-
 float RC_Channel::norm_input() const
 {
+    float result = (float)control_in_zero_dz / high_in;
+#if DEBUG
     float ret;
     int16_t reverse_mul = (reversed?-1:1);
     if (radio_in < radio_trim) {
@@ -284,14 +305,21 @@ float RC_Channel::norm_input() const
         }
         ret = reverse_mul * (float)(radio_in - radio_trim) / (float)(radio_max  - radio_trim);
     }
-    return constrain_float(ret, -1.0f, 1.0f);
+    ret = constrain_float(ret, -1.0f, 1.0f);
+    AP::logger().Write("NRM", "TimeUS,I,old,new,diff", "s#---", "-----", "QBfff",
+            AP_HAL::micros64(), ch_in,
+            ret, result, result-ret);
+#endif
+    return result;
 }
 
 float RC_Channel::norm_input_dz() const
 {
+    float result = (float) control_in / high_in;
+#if DEBUG
+    float ret;
     int16_t dz_min = radio_trim - dead_zone;
     int16_t dz_max = radio_trim + dead_zone;
-    float ret;
     int16_t reverse_mul = (reversed?-1:1);
     if (radio_in < dz_min && dz_min > radio_min) {
         ret = reverse_mul * (float)(radio_in - dz_min) / (float)(dz_min - radio_min);
@@ -300,19 +328,31 @@ float RC_Channel::norm_input_dz() const
     } else {
         ret = 0;
     }
-    return constrain_float(ret, -1.0f, 1.0f);
+    ret = constrain_float(ret, -1.0f, 1.0f);
+    AP::logger().Write("NRDZ", "TimeUS,I,old,new,diff", "s#---", "-----", "QBfff",
+            AP_HAL::micros64(), ch_in,
+            ret, result, result-ret);
+#endif
+    return result;
 }
 
 // return a normalised input for a channel, in range -1 to 1,
 // ignores trim and deadzone
 float RC_Channel::norm_input_ignore_trim() const
 {
+    float result = (float)control_in_ignore_trim;
+#if DEBUG
     // sanity check min and max to avoid divide by zero
     if (radio_max <= radio_min) {
         return 0.0f;
     }
-    const float ret = (reversed ? -2.0f : 2.0f) * (((float)(radio_in - radio_min) / (float)(radio_max - radio_min)) - 0.5f);
-    return constrain_float(ret, -1.0f, 1.0f);
+    float ret = (reversed ? -2.0f : 2.0f) * (((float)(radio_in - radio_min) / (float)(radio_max - radio_min)) - 0.5f);
+    ret = constrain_float(ret, -1.0f, 1.0f);
+    AP::logger().Write("NRIT", "TimeUS,I,old,new,diff", "s#---", "-----", "QBfff",
+            AP_HAL::micros64(), ch_in,
+            ret, result, result-ret);
+#endif
+    return result;
 }
 
 /*
