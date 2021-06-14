@@ -124,7 +124,7 @@ protected:
 
 private:
 
-    void rate_input_rad(float &out, const RC_Channel *ch, float min, float max) const;
+    void rate_input_rad(float &out, RC_Channel *ch, float min, float max) const;
 };
 
 #endif // HAL_MOUNT_ENABLED
