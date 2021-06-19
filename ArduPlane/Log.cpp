@@ -382,6 +382,15 @@ const struct LogStructure Plane::log_structure[] = {
     { LOG_QTUN_MSG, sizeof(QuadPlane::log_QControl_Tuning),
       "QTUN", "QffffffeccffBB", "TimeUS,ThI,ABst,ThO,ThH,DAlt,Alt,BAlt,DCRt,CRt,TMix,Sscl,Trn,Ast", "s----mmmnn----", "F----00000-0--" },
 
+//@LoggerMessage: RCTL
+// @Description: RC_Channel control_in and norm_in override value
+// @Field: TimeUS: Time since system startup
+// @Field: c: channel number
+// @Field: ctl_in: control_in value
+// @Field: norm_in: norm_in value
+      { LOG_RCTL_MSG, sizeof(QuadPlane::log_RCTL),
+        "RCTL", "QBhf", "TimeUS,c,ctl_in,norm_in", "s#--", "F---"},
+
 // @LoggerMessage: PIQR,PIQP,PIQY,PIQA
 // @Description: QuadPlane Proportional/Integral/Derivative gain values for Roll/Pitch/Yaw/Z
 // @Field: TimeUS: Time since system startup

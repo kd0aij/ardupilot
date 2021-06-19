@@ -176,6 +176,14 @@ public:
         uint8_t  assist;
     };
 
+    struct PACKED log_RCTL {
+        LOG_PACKET_HEADER;
+        uint64_t time_us;
+        uint8_t  chan;
+        int16_t  ctl_in;
+        float    norm_in;
+    };
+
     MAV_TYPE get_mav_type(void) const;
 
     enum Q_ASSIST_STATE_ENUM {
@@ -288,6 +296,7 @@ private:
     bool should_relax(void);
     void motors_output(bool run_rate_controller = true);
     void Log_Write_QControl_Tuning();
+    void Log_Write_RCTL(RC_Channel &chan, uint8_t cnum);
     float landing_descent_rate_cms(float height_above_ground) const;
     
     // setup correct aux channels for frame class

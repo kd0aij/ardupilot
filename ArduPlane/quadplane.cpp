@@ -2142,6 +2142,14 @@ void QuadPlane::update(void)
             if (now - last_ctrl_log_ms > 100) {
                 last_ctrl_log_ms = now;
                 attitude_control->control_monitor_log();
+
+                // if set_control_in has been called, log the modified values
+                for (uint8_t cnum=0; cnum<rc().get_valid_channel_count(); cnum++) {
+                    RC_Channel chan = *rc().channel(cnum);
+                    if (chan.control_override) {
+                        Log_Write_RCTL(chan, cnum+1);
+                    }
+                }
             }
         }
         // log QTUN at 25 Hz if motors are active, or have been active in the last quarter second
@@ -2151,6 +2159,18 @@ void QuadPlane::update(void)
         }
     }
 
+}
+
+void QuadPlane::Log_Write_RCTL(RC_Channel &chan, uint8_t cnum)
+{
+    struct log_RCTL pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_RCTL_MSG),
+        time_us : AP_HAL::micros64(),
+        chan    : cnum,
+        ctl_in  : chan.get_control_in(),
+        norm_in : chan.norm_input()
+    };
+    plane.logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
 /*
