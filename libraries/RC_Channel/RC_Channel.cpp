@@ -147,6 +147,7 @@ bool RC_Channel::get_reverse(void) const
  */
 void RC_Channel::set_control_in(int16_t val) 
 { 
+    control_override = true;
     control_in = val;
     control_in_no_dz = val;
 
@@ -176,6 +177,7 @@ void RC_Channel::_update(){
     // norm_in and norm_in_no_dz do not depend on channel type
     norm_in = calc_normalized_input(radio_in, dead_zone);
     norm_in_no_dz = calc_normalized_input(radio_in, 0);
+    control_override = false;
 }
 
 // read input from hal.rcin or overrides

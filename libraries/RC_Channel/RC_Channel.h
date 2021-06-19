@@ -104,6 +104,7 @@ public:
     ChannelType get_type(void) const { return type_in; }
 
     AP_Int16    option; // e.g. activate EPM gripper / enable fence
+    bool        control_override;
 
     // auxiliary switch support
     void init_aux();
