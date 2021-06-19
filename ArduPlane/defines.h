@@ -6,7 +6,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define DEBUG 0
+//#define DEBUG 0
 #define SERVO_MAX 4500  // This value represents 45 degrees and is just an
                         // arbitrary representation of servo max travel.
 
@@ -97,6 +97,7 @@ enum log_messages {
     LOG_CMDA_MSG,
     LOG_CMDS_MSG,
     LOG_CMDH_MSG,
+    LOG_RCTL_MSG,
 };
 
 #define MASK_LOG_ATTITUDE_FAST          (1<<0)
