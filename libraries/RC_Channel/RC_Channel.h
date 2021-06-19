@@ -34,7 +34,7 @@ public:
     // get the center stick position expressed as a control_in value
     int16_t     get_control_mid() const;
 
-    // read input from hal.rcin and update control_in and norm_in values
+    // read input from hal.rcin then update control_in and norm_in values
     bool        update(void);
     // update control_in and norm_in values
     void        _update();
@@ -101,6 +101,7 @@ public:
     ChannelType get_type(void) const { return type_in; }
 
     AP_Int16    option; // e.g. activate EPM gripper / enable fence
+    bool        control_override;
 
     // auxiliary switch support
     void init_aux();

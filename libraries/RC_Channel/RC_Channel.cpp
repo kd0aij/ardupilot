@@ -138,8 +138,7 @@ bool RC_Channel::get_reverse(void) const
 }
 
 /* Override the control_in value.
- * To avoid internal inconsistencies recompute related state variables to
- * make them consistent with the new control_in value.
+ * Recompute related state variables to make them consistent with the new control_in value.
  *
  *  The side effects of this function will be overridden on the next call to update()
  * so the caller must guarantee that this method is called after update() and before
@@ -168,7 +167,6 @@ void RC_Channel::_update(){
     // norm_in and norm_in_no_dz do not depend on channel type
     norm_in = calc_normalized_input(radio_in, dead_zone);
     norm_in_no_dz = calc_normalized_input(radio_in, 0);
-    control_override = false;
 }
 
 // read input from hal.rcin or overrides
