@@ -381,6 +381,10 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: Ast: Q assist active state
     { LOG_QTUN_MSG, sizeof(QuadPlane::log_QControl_Tuning),
       "QTUN", "QffffffeccffBB", "TimeUS,ThI,ABst,ThO,ThH,DAlt,Alt,BAlt,DCRt,CRt,TMix,Sscl,Trn,Ast", "s----mmmnn----", "F----00000-0--" },
+      
+//@LoggerMessage: RCTL
+      { LOG_RCTL_MSG, sizeof(QuadPlane::log_RCTL),
+        "RCTL", "QBhf", "TimeUS,c,ctl_in,norm_in", "s#--", "F---"},
 
 // @LoggerMessage: PIQR,PIQP,PIQY,PIQA
 // @Description: QuadPlane Proportional/Integral/Derivative gain values for Roll/Pitch/Yaw/Z
