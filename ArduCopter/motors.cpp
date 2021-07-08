@@ -32,7 +32,7 @@ void Copter::arm_motors_check()
         return;
     }
 
-    int16_t yaw_in = channel_yaw->get_control_in();
+    int16_t yaw_in = channel_yaw->pwm_to_angle();
 
     // full right
     if (yaw_in > 4000) {
