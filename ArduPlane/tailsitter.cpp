@@ -303,16 +303,27 @@ bool QuadPlane::tailsitter_transition_vtol_complete(void) const
 // handle different tailsitter input types
 void QuadPlane::tailsitter_check_input(void)
 {
-    if (tailsitter_active() &&
-        (tailsitter.input_type & TAILSITTER_INPUT_PLANE)) {
-        // the user has asked for body frame controls when tailsitter
-        // is active. We switch around the control_in value for the
-        // channels to do this, as that ensures the value is
-        // consistent throughout the code
-        int16_t roll_in = plane.channel_roll->get_control_in();
-        int16_t yaw_in = plane.channel_rudder->get_control_in();
-        plane.channel_roll->set_control_in(yaw_in);
-        plane.channel_rudder->set_control_in(-roll_in);
+    if (tailsitter_active()) {
+        if (tailsitter.input_type & TAILSITTER_INPUT_PLANE) {
+            // the user has asked for body frame controls when tailsitter
+            // is active. We switch around the control_in value for the
+            // channels to do this, as that ensures the value is
+            // consistent throughout the code
+            // create mixers for roll and rudder channels if necessary
+            RC_Channel *inputs[1];
+            float weights[1];
+
+            inputs[0] = plane.channel_rudder;
+            weights[0] = 1;
+            plane.channel_roll->update_mixer(plane.channel_roll, 1, inputs, weights);
+
+            inputs[0] = plane.channel_roll;
+            weights[0] = -1;
+            plane.channel_rudder->update_mixer(plane.channel_rudder, 1, inputs, weights);
+        } else {
+            plane.channel_roll->disable_mixer();
+            plane.channel_rudder->disable_mixer();
+        }
     }
 }
 
