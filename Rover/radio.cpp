@@ -86,7 +86,7 @@ void Rover::rudder_arm_disarm_check()
 
     if (!arming.is_armed()) {
         // when not armed, full right rudder starts arming counter
-        if (channel_steer->get_control_in() > 4000) {
+        if (channel_steer->pwm_to_angle() > 4000) {
             const uint32_t now = millis();
 
             if (rudder_arm_timer == 0 ||
@@ -105,7 +105,7 @@ void Rover::rudder_arm_disarm_check()
         }
     } else if ((arming_rudder == AP_Arming::RudderArming::ARMDISARM) && !g2.motors.active()) {
         // when armed and motor not active (not moving), full left rudder starts disarming counter
-        if (channel_steer->get_control_in() < -4000) {
+        if (channel_steer->pwm_to_angle() < -4000) {
             const uint32_t now = millis();
 
             if (rudder_arm_timer == 0 ||

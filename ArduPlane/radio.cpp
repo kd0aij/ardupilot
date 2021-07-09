@@ -119,7 +119,7 @@ void Plane::rudder_arm_disarm_check()
 {
 	if (!arming.is_armed()) {
 		// when not armed, full right rudder starts arming counter
-		if (channel_rudder->get_control_in() > 4000) {
+		if (channel_rudder->pwm_to_angle() > 4000) {
 			uint32_t now = millis();
 
 			if (rudder_arm_timer == 0 ||
@@ -139,7 +139,7 @@ void Plane::rudder_arm_disarm_check()
 		}
 	} else {
 		// full left rudder starts disarming counter
-		if (channel_rudder->get_control_in() < -4000) {
+		if (channel_rudder->pwm_to_angle() < -4000) {
 			uint32_t now = millis();
 
 			if (rudder_arm_timer == 0 ||
