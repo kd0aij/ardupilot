@@ -259,6 +259,29 @@ int16_t RC_Channel::pwm_to_range() const
     return pwm_to_range_dz(dead_zone);
 }
 
+void RC_Channel::update_mixer(RC_Channel *c, uint8_t num_inputs, RC_Channel **in, float *w)
+{
+    if (this->mixer == NULL) {
+        this->mixer = new Mixer(c, num_inputs, in, w);
+    } else {
+        this->mixer->update(num_inputs, in, w);
+    }
+}
+
+void RC_Channel::disable_mixer()
+{
+    if (this->mixer) {
+        this->mixer->update(0, NULL, NULL);
+    }
+}
+
+int16_t RC_Channel::get_control_in() const
+{
+    if (this->mixer) {
+        return this->mixer->get_output();
+    }
+    return control_in;
+}
 
 int16_t RC_Channel::get_control_in_zero_dz(void) const
 {

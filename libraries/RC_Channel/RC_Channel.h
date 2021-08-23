@@ -56,6 +56,8 @@ public:
     uint8_t     percent_input() const;
     int16_t     pwm_to_range() const;
     int16_t     pwm_to_range_dz(uint16_t dead_zone) const;
+    int16_t     pwm_to_angle() const;
+    int16_t     pwm_to_angle_dz(uint16_t dead_zone) const;
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -65,7 +67,7 @@ public:
     int16_t    get_radio_in() const { return radio_in;}
     void       set_radio_in(int16_t val) {radio_in = val;}
 
-    int16_t    get_control_in() const { return control_in;}
+    int16_t    get_control_in() const;
     void       set_control_in(int16_t val) { control_in = val;}
 
     void       clear_override();
@@ -278,6 +280,9 @@ public:
     // pwm value below which the option will be disabled:
     static const uint16_t AUX_PWM_TRIGGER_LOW = 1300;
 
+    void update_mixer(RC_Channel *c, uint8_t num_inputs, RC_Channel **in, float *w);
+    void disable_mixer();
+
 protected:
 
     virtual void init_aux_function(aux_func_t ch_option, AuxSwitchPos);
@@ -306,7 +311,6 @@ protected:
         // no action by default (e.g. Tracker, Sub, who do their own thing)
     };
 
-
 private:
 
     // pwm is stored here
@@ -332,9 +336,6 @@ private:
     uint16_t override_value;
     uint32_t last_override_time;
 
-    int16_t pwm_to_angle() const;
-    int16_t pwm_to_angle_dz(uint16_t dead_zone) const;
-
     // Structure used to detect and debounce switch changes
     struct {
         int8_t debounce_position = -1;
@@ -345,6 +346,61 @@ private:
     void reset_mode_switch();
     void read_mode_switch();
     bool debounce_completed(int8_t position);
+
+    // specifies a single output mixer which is a weighted sum of N channel values
+    class Mixer {
+    public:
+        // Constructor
+        Mixer(RC_Channel *c, uint8_t num_inputs, RC_Channel** in, float *w) {
+            channel = c;
+            N = num_inputs;
+            c->mixer = this;
+            update(num_inputs, in, w);
+        }
+        // Destructor
+        ~Mixer() {
+            delete input;
+            delete weight;
+        }
+        void update(uint8_t num_inputs, RC_Channel** in, float *w) {
+            if (num_inputs > 0) {
+                if (input == NULL || num_inputs != N) {
+                    // number of inputs has changed: reallocate input and weight arrays
+                    N = num_inputs;
+                    delete input;
+                    delete weight;
+                    input = new RC_Channel*[N];
+                    weight = new float[N];
+                }
+                for (int i=0; i<N; i++) {
+                    input[i] = in[i];
+                    weight[i] = w[i];
+                }
+            } else {
+                // disable mixer but keep input and weight arrays
+                N = 0;
+            }
+        }
+        int16_t get_output() {
+            if (N == 0) {
+                // mixer is disabled
+                return channel->control_in;
+            }
+            int16_t result = 0;
+            for (int i=0; i<N; i++) {
+                result += weight[i] * input[i]->control_in;
+            }
+            return result;
+        }
+    private:
+        RC_Channel *channel;    // pointer to this channel
+        uint8_t N;
+        float *weight;      // array of weights
+        RC_Channel **input; // array of input channel pointers
+    };
+    
+    // pointer to optional mixer
+    RC_Channel::Mixer *mixer;
 
 #if !HAL_MINIMIZE_FEATURES
     // Structure to lookup switch change announcements

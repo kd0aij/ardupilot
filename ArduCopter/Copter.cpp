@@ -542,29 +542,44 @@ void Copter::init_simple_bearing()
 // update_simple_mode - rotates pilot input if we are in simple mode
 void Copter::update_simple_mode(void)
 {
-    float rollx, pitchx;
+    // exit immediately if no new radio frame
+    if (!ap.new_radio_frame) {
+        return;
+    }
 
-    // exit immediately if no new radio frame or not in simple mode
-    if (simple_mode == SimpleMode::NONE || !ap.new_radio_frame) {
+    // if not in simple mode, disable mixers and exit
+    if (simple_mode == SimpleMode::NONE) {
+        channel_roll->disable_mixer();
+        channel_pitch->disable_mixer();
         return;
     }
 
     // mark radio frame as consumed
     ap.new_radio_frame = false;
 
+    RC_Channel *inputs[] = { channel_roll, channel_pitch };
+
     if (simple_mode == SimpleMode::SIMPLE) {
         // rotate roll, pitch input by -initial simple heading (i.e. north facing)
-        rollx = channel_roll->get_control_in()*simple_cos_yaw - channel_pitch->get_control_in()*simple_sin_yaw;
-        pitchx = channel_roll->get_control_in()*simple_sin_yaw + channel_pitch->get_control_in()*simple_cos_yaw;
+        // rotate roll, pitch input from north facing to vehicle's perspective
+        float rweights[] = { ahrs.cos_yaw()*simple_cos_yaw + ahrs.sin_yaw()*simple_sin_yaw,
+                            -ahrs.cos_yaw()*simple_sin_yaw + ahrs.sin_yaw()*simple_cos_yaw};
+        channel_roll->update_mixer(channel_roll, 2, inputs, rweights);
+
+        float pweights[] = { ahrs.cos_yaw()*simple_sin_yaw - ahrs.sin_yaw()*simple_cos_yaw,
+                             ahrs.sin_yaw()*simple_sin_yaw + ahrs.cos_yaw()*simple_cos_yaw};
+        channel_pitch->update_mixer(channel_pitch, 2, inputs, pweights);
     }else{
         // rotate roll, pitch input by -super simple heading (reverse of heading to home)
-        rollx = channel_roll->get_control_in()*super_simple_cos_yaw - channel_pitch->get_control_in()*super_simple_sin_yaw;
-        pitchx = channel_roll->get_control_in()*super_simple_sin_yaw + channel_pitch->get_control_in()*super_simple_cos_yaw;
-    }
+        // rotate roll, pitch input from north facing to vehicle's perspective
+        float rweights[] = { ahrs.cos_yaw()*super_simple_cos_yaw + ahrs.sin_yaw()*super_simple_sin_yaw,
+                            -ahrs.cos_yaw()*super_simple_sin_yaw + ahrs.sin_yaw()*super_simple_cos_yaw};
+        channel_roll->update_mixer(channel_roll, 2, inputs, rweights);
 
-    // rotate roll, pitch input from north facing to vehicle's perspective
-    channel_roll->set_control_in(rollx*ahrs.cos_yaw() + pitchx*ahrs.sin_yaw());
-    channel_pitch->set_control_in(-rollx*ahrs.sin_yaw() + pitchx*ahrs.cos_yaw());
+        float pweights[] = { ahrs.cos_yaw()*super_simple_sin_yaw - ahrs.sin_yaw()*super_simple_cos_yaw,
+                             ahrs.sin_yaw()*super_simple_sin_yaw + ahrs.cos_yaw()*super_simple_cos_yaw};
+        channel_pitch->update_mixer(channel_pitch, 2, inputs, pweights);
+    }
 }
 
 // update_super_simple_bearing - adjusts simple bearing based on location
