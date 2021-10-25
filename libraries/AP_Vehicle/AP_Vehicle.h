@@ -273,6 +273,10 @@ public:
     virtual void get_osd_roll_pitch_rad(float &roll, float &pitch) const;
 #endif
 
+    // support for NAV_SCRIPTING mission command
+    virtual bool nav_scripting_active(void) { return false; }
+    virtual bool nav_scripting_update(bool completed, float throttle_pct, float roll_rate_dps, float pitch_rate_dps, float yaw_rate_dps) { return false; }
+
 protected:
 
     virtual void init_ardupilot() = 0;
