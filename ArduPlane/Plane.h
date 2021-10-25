@@ -520,6 +520,15 @@ private:
         float terrain_correction;
     } auto_state;
 
+    // support for scripting nav commands, with verify
+    struct {
+        float roll_rate_dps;
+        float pitch_rate_dps;
+        float throttle_pct;
+        uint32_t start_ms;
+        bool done;
+    } nav_scripting;
+
     struct {
         // roll pitch yaw commanded from external controller in centidegrees
         Vector3l forced_rpy_cd;
@@ -928,6 +937,10 @@ private:
     bool start_command_callback(const AP_Mission::Mission_Command &cmd);
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
     float get_wp_radius() const;
+
+    // nav scripting support
+    void do_nav_scripting(const AP_Mission::Mission_Command& cmd);
+    bool verify_nav_scripting(const AP_Mission::Mission_Command& cmd);
 
     // commands.cpp
     void set_guided_WP(void);
