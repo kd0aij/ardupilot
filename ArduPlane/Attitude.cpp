@@ -505,6 +505,13 @@ void Plane::stabilize()
             plane.stabilize_pitch(speed_scaler);
         }
 #endif
+    } else if (control_mode == &mode_auto &&
+               mission.get_current_nav_cmd().id == MAV_CMD_NAV_SCRIPTING) {
+        // scripting is in control of roll and pitch rates and throttle
+        const float aileron = rollController.get_rate_out(nav_scripting.roll_rate_dps, speed_scaler);
+        const float elevator = pitchController.get_rate_out(nav_scripting.pitch_rate_dps, speed_scaler);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, aileron);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, elevator);
     } else {
         if (g.stick_mixing == STICK_MIXING_FBW && control_mode != &mode_stabilize) {
             stabilize_stick_mixing_fbw();

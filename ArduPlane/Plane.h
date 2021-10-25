@@ -1129,6 +1129,10 @@ private:
     float get_throttle_input(bool no_deadzone=false) const;
     float get_adjusted_throttle_input(bool no_deadzone=false) const;
 
+    // support for NAV_SCRIPTING mission command
+    bool nav_scripting_active(void) override;
+    bool nav_scripting_update(bool completed, float throttle_pct, float roll_rate_dps, float pitch_rate_dps, float yaw_rate_dps) override;
+
     enum Failsafe_Action {
         Failsafe_Action_None      = 0,
         Failsafe_Action_RTL       = 1,

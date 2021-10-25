@@ -1137,8 +1137,30 @@ bool Plane::verify_nav_scripting(const AP_Mission::Mission_Command& cmd)
         const uint32_t now = AP_HAL::millis();
         if (now - nav_scripting.start_ms > cmd.content.nav_scripting.timeout_s*1024U) {
             gcs().send_text(MAV_SEVERITY_INFO, "NavScripting timed out");
+            nav_scripting.done = true;
             return true;
         }
     }
     return nav_scripting.done;
+}
+
+// support for NAV_SCRIPTING mission command
+bool Plane::nav_scripting_active(void)
+{
+    return !nav_scripting.done &&
+        control_mode == &mode_auto &&
+        mission.get_current_nav_cmd().id == MAV_CMD_NAV_SCRIPTING;
+}
+
+// support for NAV_SCRIPTING mission command
+bool Plane::nav_scripting_update(bool completed, float throttle_pct, float roll_rate_dps, float pitch_rate_dps, float yaw_rate_dps)
+{
+    if (!nav_scripting_active()) {
+        return false;
+    }
+    nav_scripting.done = completed;
+    nav_scripting.roll_rate_dps = roll_rate_dps;
+    nav_scripting.pitch_rate_dps = pitch_rate_dps;
+    nav_scripting.throttle_pct = throttle_pct;
+    return true;
 }
