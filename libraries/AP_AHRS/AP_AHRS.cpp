@@ -851,17 +851,13 @@ bool AP_AHRS::airspeed_estimate(float &airspeed_ret) const
         return dcm.airspeed_estimate(get_active_airspeed_index(), airspeed_ret);
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    case EKFType::SIM:
-        if (!_sitl) {
-            return false;
-        }
-        airspeed_ret = _sitl->state.airspeed;
-        return true;
-#endif
+    case EKFType::SIM: // fall through to EKF3 (preferred) or EKF2 
 
-#if HAL_NAVEKF2_AVAILABLE
-    case EKFType::TWO:
-        return dcm.airspeed_estimate(get_active_airspeed_index(), airspeed_ret);
+        // if (!_sitl) {
+        //     return false;
+        // }
+        // airspeed_ret = _sitl->state.airspeed;
+        // return true;
 #endif
 
 #if HAL_NAVEKF3_AVAILABLE
@@ -870,13 +866,18 @@ bool AP_AHRS::airspeed_estimate(float &airspeed_ret) const
         break;
 #endif
 
+#if HAL_NAVEKF2_AVAILABLE
+    case EKFType::TWO:
+        return dcm.airspeed_estimate(get_active_airspeed_index(), airspeed_ret);
+#endif
+
 #if HAL_EXTERNAL_AHRS_ENABLED
     case EKFType::EXTERNAL:
         return false;
 #endif
     }
 
-    // estimate it via nav velocity and wind estimates
+    // estimate airspeed via nav velocity and wind estimates
     Vector3f nav_vel;
     float true_airspeed;
     if (ret && have_inertial_nav() && get_velocity_NED(nav_vel)) {
@@ -892,7 +893,7 @@ bool AP_AHRS::airspeed_estimate(float &airspeed_ret) const
         }
         airspeed_ret = true_airspeed / get_EAS2TAS();
     } else {
-        // fallback to DCM if airspeed estimate if EKF has wind but no velocity estimate
+        // fallback to DCM airspeed estimate if EKF has wind but no velocity estimate
         ret = dcm.airspeed_estimate(get_active_airspeed_index(), airspeed_ret);
     }
 
