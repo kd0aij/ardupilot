@@ -204,6 +204,9 @@ int32_t AP_YawController::get_servo_out(float scaler, bool disable_integrator)
     // to calculate the rate relative to the turn requirement in degrees/sec
     float rate_hp_in = ToDeg(omega_z - rate_offset);
 
+    AP::logger().Write("YDMP", "TimeUS,bank,rofs,rate", "Qfff",
+                        AP_HAL::micros64(), bank_angle, rate_offset, rate_hp_in);
+
     // Apply a high-pass filter to the rate to washout any steady state error
     // due to bias errors in rate_offset
     // Use a cut-off frequency of omega = 0.2 rad/sec
