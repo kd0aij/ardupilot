@@ -241,6 +241,7 @@ constexpr int8_t Copter::_failsafe_priorities[7];
 void Copter::fast_loop()
 {
     // update INS immediately to get current gyro data populated
+    // sets _last_update_usec: accessor is ins.get_last_update_usec()
     ins.update();
 
     // run low level rate controllers that only require IMU data
@@ -248,6 +249,31 @@ void Copter::fast_loop()
 
     // send outputs to the motors library immediately
     motors_output();
+
+    // calculate the latency from ins.update() to pushing motor outputs
+    // the last line of Copter::motors_output() in motors.cpp is SRV_Channels::push();
+    const int max_count = 400;
+    static int loop_count = 0;
+    static uint32_t latency_us = 0;
+    uint32_t last_update = ins.get_last_update_usec();
+    static uint32_t prev_update = 0;
+    static uint32_t min_interval = 0;
+    static uint32_t max_interval = 0;
+    uint32_t interval = last_update - prev_update;
+    prev_update = last_update;
+    if (interval < min_interval) min_interval = interval;
+    if (interval > max_interval) max_interval = interval;
+    uint32_t now = AP_HAL::micros();
+    latency_us += (now - last_update);
+    if (loop_count++ >= max_count) {
+        float avg_lat_us = (float)latency_us / loop_count;
+        hal.console->printf("avg gyro->motors latency: %4.1f, min,max interval: %ld %ld, jitter: %ld usec\n",
+                            avg_lat_us, min_interval, max_interval, (max_interval - min_interval));
+        loop_count = 0;
+        latency_us = 0;
+        min_interval = interval;
+        max_interval = interval;
+    }
 
     // run EKF state estimator (expensive)
     // --------------------
