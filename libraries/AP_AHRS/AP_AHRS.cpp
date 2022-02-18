@@ -278,6 +278,13 @@ void AP_AHRS::reset_gyro_drift(void)
 
 void AP_AHRS::update(bool skip_ins_update)
 {
+    const int max_count = 400;
+    static int call_count = 0;
+    static uint64_t delta = 0;
+
+    uint64_t then = AP_HAL::micros64();
+    call_count++;
+
     if (!skip_ins_update) {
         // tell the IMU to grab some data
         AP::ins().update();
@@ -387,6 +394,15 @@ void AP_AHRS::update(bool skip_ins_update)
 #endif
         }
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "AHRS: %s active", shortname);
+    }
+    uint64_t now = AP_HAL::micros64();
+    delta += (now - then);
+    if (call_count >= max_count) {
+        float avg_delta = (float)delta/(float)max_count;
+        // AP::logger().Write("AHRT", "TimeUS,update_us", "Qf", now, avg_delta);
+        hal.console->printf("update avg dt: %f\n", avg_delta);
+        call_count = 0;
+        delta = 0;
     }
 }
 
