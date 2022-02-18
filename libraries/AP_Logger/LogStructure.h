@@ -996,11 +996,11 @@ struct PACKED log_VER {
 // @LoggerMessage: PM
 // @Description: autopilot system performance and general data dumping ground
 // @Field: TimeUS: Time since system startup
-// @Field: NLon: Number of long loops detected
+// @Field: NLon: Number of long loops detected (exceeding desired loop time by more than 20%)
 // @Field: NLoop: Number of measurement loops for this message
-// @Field: MaxT: Maximum loop time
-// @Field: Mem: Free memory available
-// @Field: Load: System processor load
+// @Field: MaxT: Maximum loop time (microseconds)
+// @Field: Mem: Free memory available (bytes)
+// @Field: Load: System processor load (percent*10)
 // @Field: IntE: Internal error mask; which internal errors have been detected
 // @Field: ErrL: Internal error line number; last line number on which a internal error was detected
 // @Field: ErrC: Internal error count; how many internal errors have been detected
