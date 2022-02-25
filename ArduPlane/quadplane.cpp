@@ -3171,7 +3171,10 @@ float QuadPlane::forward_throttle_pct()
             return 0;
         } else {
             // calculate fwd throttle demand from manual input
-            float fwd_thr = rc_fwd_thr_ch->percent_input();
+            // float fwd_thr = rc_fwd_thr_ch->percent_input();
+            // hack to use elevator input as forward throttle and force nav_pitch to 0
+            plane.nav_pitch_cd = 0;
+            float fwd_thr = (float)plane.channel_pitch->get_control_in() / plane.channel_pitch->get_range();
 
             // set forward throttle to fwd_thr_max * (manual input + mix): range [0,100]
             fwd_thr *= .01f * constrain_float(fwd_thr_max, 0, 100);
