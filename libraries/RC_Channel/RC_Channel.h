@@ -231,14 +231,14 @@ public:
         FORCEFLYING =        159, // enable or disable land detection for GPS based manual modes preventing land detection and maintainting set_throttle_mix_max
         WEATHER_VANE_ENABLE = 160, // enable/disable weathervaning
 
-        // inputs from 200 will eventually used to replace RCMAP
+        // inputs from 200 will eventually be used to replace RCMAP
         ROLL =               201, // roll input
         PITCH =              202, // pitch input
         THROTTLE =           203, // throttle pilot input
         YAW =                204, // yaw pilot input
         MAINSAIL =           207, // mainsail input
         FLAP =               208, // flap input
-        FWD_THR =            209, // VTOL manual forward throttle
+        FWD_THR =            209, // VTOL manual forward throttle input
         AIRBRAKE =           210, // manual airbrake control
         WALKING_HEIGHT =     211, // walking robot height input
 
