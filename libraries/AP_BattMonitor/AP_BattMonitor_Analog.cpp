@@ -88,8 +88,9 @@ AP_BattMonitor_Analog::read()
         // this copes with changing the pin at runtime
         _state.healthy &= _curr_pin_analog_source->set_pin(_curr_pin);
 
-        // read current
-        _state.current_amps = (_curr_pin_analog_source->voltage_average() - _curr_amp_offset) * _curr_amp_per_volt;
+        // read current and constrain nonnegative
+        float v = MAX(0.0f, _curr_pin_analog_source->voltage_average() - _curr_amp_offset);
+        _state.current_amps = v * _curr_amp_per_volt;
 
         // update total current drawn since startup
         if (_state.last_time_micros != 0 && dt < 2000000.0f) {
