@@ -24,7 +24,8 @@ void ModeQStabilize::update()
     if (plane.quadplane.rc_fwd_thr_ch != nullptr) {
       if ((quadplane.options & QuadPlane::OPTION_FWD_THR_ELEV) && (plane.quadplane.rc_fwd_thr_ch->get_aux_switch_pos() != RC_Channel::AuxSwitchPos::LOW)) {
         // don't allow downward pitch
-        if (pitch_input < 0) pitch_input = 0;
+        // if (pitch_input < 0) pitch_input = 0;
+        pitch_input = 0;
       }
     }
 
