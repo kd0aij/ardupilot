@@ -406,27 +406,42 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_out_cd
         return;
     }
 
-    float rc_2_rad = radians(angle_max_cd * 0.01) / (float)ROLL_PITCH_YAW_INPUT_MAX;
+    // fetch roll and pitch stick positions and map to unit sphere
+    float xthr = channel_pitch->norm_input_dz();
+    float ythr = -channel_roll->norm_input_dz();
 
-    // fetch roll and pitch stick positions and convert them to normalised horizontal thrust
-    Vector2f thrust;
-    thrust.x = - tanf(rc_2_rad * channel_pitch->get_control_in());
-    thrust.y = tanf(rc_2_rad * channel_roll->get_control_in());
+    // construct  vector sv on unit sphere
+    const float sz = 1.0f / tanf(radians(angle_max_cd * 0.01));
+    Vector3f sv(xthr, ythr, sz);
+    sv.normalize();
 
-    // calculate the horizontal thrust limit based on the angle limit
+    // convert the thrust angle limit to radians
     angle_limit_cd = constrain_float(angle_limit_cd, 1000.0f, angle_max_cd);
-    float thrust_limit = tanf(radians(angle_limit_cd * 0.01));
+    float angle_limit = radians(angle_limit_cd * 0.01);
+    const float lsz = 1.0f / tanf(angle_limit);
 
-    // apply horizontal thrust limit
-    thrust.limit_length(thrust_limit);
+    // apply tilt limit
+    float tilt_angle = acosf(sv.z);
+    if (tilt_angle > angle_limit) {
+        // construct vector sv at tilt limit with same longitude on unit sphere
+        float theta = atan2f(sv.y, sv.x);
+        sv.x = cosf(theta);
+        sv.y = sinf(theta);
+        sv.z = lsz;
+        sv.normalize();
+    }
 
-    // Conversion from angular thrust vector to euler angles.
-    float pitch_rad = - atanf(thrust.x);
-    float roll_rad = atanf(cosf(pitch_rad) * thrust.y);
+    float roll_rad = -asinf(sv.y);
+    float pitch_rad = asinf(sv.x / cosf(roll_rad));
 
     // Convert to centi-degrees
     roll_out_cd = degrees(roll_rad) * 100.0;
     pitch_out_cd = degrees(pitch_rad) * 100.0;
+    
+    AP::logger().Write("LEAN", "TimeUS,x,y,roll,pitch", "Qffff",
+                        AP_HAL::micros64(),
+                        xthr, ythr, 
+                        roll_out_cd/100, pitch_out_cd/100);
 }
 
 // transform pilot's roll or pitch input into a desired velocity
