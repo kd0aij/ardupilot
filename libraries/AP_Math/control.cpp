@@ -527,26 +527,29 @@ float accel_to_angle(float accel)
 // returns roll and pitch angle in degrees
 void rc_input_to_roll_pitch(float &roll_out_deg, float &pitch_out_deg, float roll_in_unit, float pitch_in_unit, float angle_max_deg, float angle_limit_deg)
 {
+    // Map the input roll and pitch angles to a point on a unit hemisphere.
+    // The lean angle is 90 degrees on the equator of this hemisphere at its
+    // intersection with the plane.
 
-    float rc_2_rad = radians(angle_max_deg);
+    // scale normalized roll and pitch inputs by the maximum stick angle
+    float angle_max = radians(angle_max_deg);   // should angle_max_deg be constrained to [10,90]?
 
-    // fetch roll and pitch stick positions and convert them to normalised horizontal thrust
-    Vector2f thrust;
-    thrust.x = - tanf(rc_2_rad * pitch_in_unit);
-    thrust.y = tanf(rc_2_rad * roll_in_unit);
+    // Projection of tilt vector (parallel to body-frame Z axis) to roll/pitch plane
+    Vector2f tilt_xy;
+    tilt_xy.x =  sinf(pitch_in_unit * angle_max);
+    tilt_xy.y = -sinf(roll_in_unit  * angle_max);
 
-    // calculate the horizontal thrust limit based on the angle limit
+    // apply tilt limit by limiting xylen: sin(limit) = xylen_max / R
     angle_limit_deg = constrain_float(angle_limit_deg, 10.0f, angle_max_deg);
-    float thrust_limit = tanf(radians(angle_limit_deg));
+    float limit = radians(angle_limit_deg);
+    float xylen_max = sinf(limit);
+    tilt_xy.limit_length(xylen_max);
 
-    // apply horizontal thrust limit
-    thrust.limit_length(thrust_limit);
+    // calculate Euler roll/pitch
+    float roll_rad = -asinf(tilt_xy.y);
+    float pitch_rad = safe_asin(tilt_xy.x / cosf(roll_rad));
 
-    // Conversion from angular thrust vector to euler angles.
-    float pitch_rad = - atanf(thrust.x);
-    float roll_rad = atanf(cosf(pitch_rad) * thrust.y);
-
-    // Convert to centi-degrees
+    // Convert to degrees
     roll_out_deg = degrees(roll_rad);
     pitch_out_deg = degrees(pitch_rad);
 }
