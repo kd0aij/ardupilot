@@ -547,7 +547,17 @@ void rc_input_to_roll_pitch(float &roll_out_deg, float &pitch_out_deg, float rol
 
     // calculate Euler roll/pitch
     float roll_rad = -asinf(tilt_xy.y);
-    float pitch_rad = safe_asin(tilt_xy.x / cosf(roll_rad));
+    float c_roll = cosf(roll_rad);
+
+    // cope with singularity at roll=pi/2
+    float pitch_rad = M_PI_2;
+    if (abs(c_roll) < FLT_EPSILON) {
+        if (tilt_xy.x < 0) {
+            pitch_rad *= -1;
+        }
+    } else {
+        pitch_rad = safe_asin(tilt_xy.x / c_roll);
+    }
 
     // Convert to degrees
     roll_out_deg = degrees(roll_rad);
