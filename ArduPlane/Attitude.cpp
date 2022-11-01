@@ -493,6 +493,9 @@ void Plane::stabilize_acro_quaternion(float speed_scaler)
     float roll_rate = (rexpo/SERVO_MAX) * g.acro_roll_rate;
     float pitch_rate = (pexpo/SERVO_MAX) * g.acro_pitch_rate;
     float yaw_rate = (yexpo/SERVO_MAX) * g.acro_yaw_rate;
+    bool roll_active = !is_zero(roll_rate);
+    bool pitch_active = !is_zero(pitch_rate);
+    bool yaw_active = !is_zero(yaw_rate);
 
     // integrate target attitude
     Vector3f r{ float(radians(roll_rate)), float(radians(pitch_rate)), float(radians(yaw_rate)) };
@@ -525,9 +528,19 @@ void Plane::stabilize_acro_quaternion(float speed_scaler)
 
     // don't let too much error build up, limit to 0.2s
     const float max_error_t = 0.2;
-    const float max_err_roll_rad  = radians(g.acro_roll_rate*max_error_t);
-    const float max_err_pitch_rad = radians(g.acro_pitch_rate*max_error_t);
-    const float max_err_yaw_rad   = radians(g.acro_yaw_rate*max_error_t);
+    float max_err_roll_rad  = radians(g.acro_roll_rate*max_error_t);
+    float max_err_pitch_rad = radians(g.acro_pitch_rate*max_error_t);
+    float max_err_yaw_rad   = radians(g.acro_yaw_rate*max_error_t);
+
+    if (!roll_active && acro_state.roll_active_last) {
+        max_err_roll_rad = 0;
+    }
+    if (!pitch_active && acro_state.pitch_active_last) {
+        max_err_pitch_rad = 0;
+    }
+    if (!yaw_active && acro_state.yaw_active_last) {
+        max_err_yaw_rad = 0;
+    }
 
     Vector3f error_angle2 = error_angle1;
     error_angle2.x = constrain_float(error_angle2.x, -max_err_roll_rad, max_err_roll_rad);
@@ -549,6 +562,10 @@ void Plane::stabilize_acro_quaternion(float speed_scaler)
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron,  rollController.get_rate_out(error_angle2.x, speed_scaler));
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_rate_out(error_angle2.y, speed_scaler));
     steering_control.steering = steering_control.rudder = yawController.get_rate_out(error_angle2.z,  speed_scaler, false);
+
+    acro_state.roll_active_last = roll_active;
+    acro_state.pitch_active_last = pitch_active;
+    acro_state.yaw_active_last = yaw_active;
 }
 
 /*
