@@ -158,6 +158,9 @@ protected:
     // Output pilot throttle, this is used in stabilized modes without auto throttle control
     void output_pilot_throttle();
 
+    // Calculate nav_roll_cd using roll stick as either rate or rate input
+    void calc_nav_roll_cd_from_stick_input();
+
 #if HAL_QUADPLANE_ENABLED
     // References for convenience, used by QModes
     AC_PosControl*& pos_control;

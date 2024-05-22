@@ -250,6 +250,19 @@ bool Mode::is_taking_off() const
     return (plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF);
 }
 
+// Calculate nav_roll_cd using roll stick as either rate or rate input
+void Mode::calc_nav_roll_cd_from_stick_input()
+{
+    if (true) {
+        const float rexpo = plane.roll_in_expo(true);
+        float roll_rate = (rexpo/SERVO_MAX) * plane.g.acro_roll_rate;
+        plane.nav_roll_cd  += 100 * roll_rate *  plane.G_Dt;
+        plane.nav_roll_cd = constrain_int32(plane.nav_roll_cd, -plane.roll_limit_cd, plane.roll_limit_cd);
+    } else {
+        plane.nav_roll_cd  = plane.channel_roll->norm_input() * plane.roll_limit_cd;
+    }
+}
+
 // Helper to output to both k_rudder and k_steering servo functions
 void Mode::output_rudder_and_steering(float val)
 {
